@@ -85,17 +85,18 @@ else
         1)
             info "Installing standard Ollama..."
             run sh -c 'curl -fsSL https://ollama.com/install.sh -o /tmp/ollama-install.sh && sh /tmp/ollama-install.sh && rm -f /tmp/ollama-install.sh'
-            run systemctl start ollama 2>/dev/null || ollama serve &
+            run sudo systemctl start ollama 2>/dev/null || { warn "Could not start via systemctl (need sudo?). Trying ollama serve..."; run ollama serve & }
             log "Ollama installed"
             ;;
         2)
             info "Installing Intel Ollama..."
             INTEL_DIR="/opt/ollama-intel"
-            run mkdir -p "$INTEL_DIR"
+            warn "This requires sudo access to write to /opt and /usr/local/bin."
+            run sudo mkdir -p "$INTEL_DIR"
             info "Downloading Intel Ollama from GitHub releases..."
-            run curl -L -o "$INTEL_DIR/ollama" "https://github.com/intel/ollama/releases/latest/download/ollama-linux-amd64"
-            run chmod +x "$INTEL_DIR/ollama"
-            run ln -sf "$INTEL_DIR/ollama" /usr/local/bin/ollama
+            run sudo curl -L -o "$INTEL_DIR/ollama" "https://github.com/intel/ollama/releases/latest/download/ollama-linux-amd64"
+            run sudo chmod +x "$INTEL_DIR/ollama"
+            run sudo ln -sf "$INTEL_DIR/ollama" /usr/local/bin/ollama
             warn "Intel Ollama installed. Run: ollama serve"
             ;;
         s|S)
@@ -124,8 +125,17 @@ echo ""
 # ===== Step 3: Check plugin conflicts =====
 echo "━━━ Step 3/8: Plugin Conflict Check ━━━"
 if [ -f "$OPENCLAW_JSON" ]; then
-    if grep -q "subconscious-personality-guardian" "$OPENCLAW_JSON" 2>/dev/null; then
-        warn "⚠️  CONFLICT DETECTED: subconscious-personality-guardian conflicts with memory-core!"
+    # JSON-aware conflict check: look for active entry in plugins.entries
+    if python3 -c "
+import json, sys
+with open('$OPENCLAW_JSON') as f:
+    cfg = json.load(f)
+entries = cfg.get('plugins', {}).get('entries', {})
+if 'subconscious-personality-guardian' in entries:
+    sys.exit(0)
+sys.exit(1)
+" 2>/dev/null; then
+        warn "\u26a0\ufe0f  CONFLICT DETECTED: subconscious-personality-guardian is active in plugins.entries!"
         echo ""
         echo "  Both plugins use the same memory slot. You must disable one of them."
         echo "  Recommended: keep memory-core, disable subconscious-personality-guardian."
@@ -134,11 +144,15 @@ if [ -f "$OPENCLAW_JSON" ]; then
         if [ "$DRY_RUN" = false ]; then
             read -r -p "  Auto-disable subconscious-personality-guardian? [Y/n]: " disable_guardian
             if [ "$disable_guardian" != "n" ] && [ "$disable_guardian" != "N" ]; then
-                run python3 -c "
+                run env OPENCLAW_JSON="$OPENCLAW_JSON" python3 -c "
 import json
-path = '$OPENCLAW_JSON'
+import os
+path = os.environ['OPENCLAW_JSON']
 with open(path) as f:
     cfg = json.load(f)
+# Remove from entries first
+entries = cfg.setdefault('plugins', {}).setdefault('entries', {})
+entries.pop('subconscious-personality-guardian', None)
 # Add to disabled list
 plugins = cfg.setdefault('plugins', {})
 disabled = plugins.setdefault('disabled', [])
@@ -179,8 +193,15 @@ echo ""
 # ===== Step 5: Configure openclaw.json =====
 echo "━━━ Step 5/8: Configuration (openclaw.json) ━━━"
 if [ -f "$OPENCLAW_JSON" ]; then
-    # Check if memory-core is already in config
-    if grep -q "memory-core" "$OPENCLAW_JSON" 2>/dev/null; then
+    # JSON-aware check: memory-core in plugins.entries
+    if python3 -c "
+import json, sys
+with open('$OPENCLAW_JSON') as f:
+    cfg = json.load(f)
+if 'memory-core' in cfg.get('plugins', {}).get('entries', {}):
+    sys.exit(0)
+sys.exit(1)
+" 2>/dev/null; then
         log "memory-core already configured in openclaw.json"
     else
         warn "memory-core not found in openclaw.json"
@@ -200,10 +221,11 @@ if [ -f "$OPENCLAW_JSON" ]; then
         if [ "$DRY_RUN" = false ]; then
             read -r -p "  Auto-insert into openclaw.json? [y/N]: " auto_insert
             if [ "$auto_insert" = "y" ] || [ "$auto_insert" = "Y" ]; then
-                # Simple insertion using Python for JSON safety
-                run python3 -c "
-import json, sys
-path = '$OPENCLAW_JSON'
+                # Insertion via env var for injection safety
+                run env OPENCLAW_JSON="$OPENCLAW_JSON" python3 -c "
+import json
+import os
+path = os.environ['OPENCLAW_JSON']
 with open(path) as f:
     cfg = json.load(f)
 plugins = cfg.setdefault('plugins', {})
@@ -244,17 +266,18 @@ else
 
         info "MemOS Cloud plugin will be configured in openclaw.json (no separate install needed)"
 
-        run python3 -c "
+        run env MEMOS_URL="$memos_url" MEMOS_TOKEN="$memos_token" OPENCLAW_JSON="$OPENCLAW_JSON" python3 -c "
 import json
-path = '$OPENCLAW_JSON'
+import os
+path = os.environ['OPENCLAW_JSON']
 with open(path) as f:
     cfg = json.load(f)
 entries = cfg.setdefault('plugins', {}).setdefault('entries', {})
 entries['memos-cloud-openclaw-plugin'] = {
     'enabled': True,
     'config': {
-        'url': '$memos_url',
-        'token': '$memos_token',
+        'url': os.environ['MEMOS_URL'],
+        'token': os.environ['MEMOS_TOKEN'],
         'resetOnNew': True,
         'recallEnabled': True,
         'recallFilterFailOpen': True,
@@ -305,9 +328,9 @@ echo ""
 # ===== Step 8: Set up cron jobs =====
 echo "━━━ Step 8/8: Cron Jobs ━━━"
 if command -v openclaw &>/dev/null; then
-    # Dreaming pipeline
-    if openclaw cron list 2>/dev/null | grep -q "memory-dreaming"; then
-        log "Dreaming cron already exists"
+    # Dreaming pipeline — exact name match
+    if openclaw cron list 2>/dev/null | grep -q "memory-dreaming-pipeline"; then
+        log "Dreaming cron 'memory-dreaming-pipeline' already exists"
     else
         run openclaw cron add \
             --name "memory-dreaming-pipeline" \
