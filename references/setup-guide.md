@@ -5,17 +5,57 @@
 ## Prerequisites
 
 - OpenClaw >= v25.9.0
-- Ollama running on `http://127.0.0.1:11434`
-- bge-m3 model pulled: `ollama pull bge-m3`
 - Node.js >= 18
+- Internet connection (for downloading Ollama and bge-m3 model)
 
-## Step 1: Install memory-core Plugin
+## Step 1: Install Ollama
 
-### Via OpenClaw CLI
+### Option A: Standard
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+```
+
+### Option B: Intel Edition (OpenVINO backend)
+```bash
+curl -L -o /usr/local/bin/ollama https://github.com/intel/ollama/releases/latest/download/ollama-linux-amd64
+chmod +x /usr/local/bin/ollama
+```
+
+Start Ollama:
+```bash
+ollama serve
+```
+
+Verify:
+```bash
+curl http://127.0.0.1:11434/api/tags
+```
+
+### Step 1.5: Pull bge-m3 Embedding Model
 
 ```bash
-openclaw plugins install memory-core
+ollama pull bge-m3
 ```
+
+## Step 2: Plugin Conflict Check
+
+Before installing memory-core, check if `subconscious-personality-guardian` is present:
+
+```bash
+grep -q "subconscious-personality-guardian" ~/.openclaw/openclaw.json
+```
+
+If found, add to `plugins.disabled` and `plugins.deny` in `openclaw.json`:
+```json
+{
+  "plugins": {
+    "disabled": ["subconscious-personality-guardian"],
+    "deny": ["subconscious-personality-guardian"]
+  }
+}
+```
+
+## Step 3: Install memory-core Plugin
 
 ### Manual Config
 
@@ -49,7 +89,7 @@ Verify status:
 openclaw memory status
 ```
 
-## Step 2: Install MemOS Cloud Plugin (Optional)
+## Step 3: Install MemOS Cloud Plugin (Optional)
 
 Required for cross-device memory sync.
 
@@ -70,7 +110,7 @@ Required for cross-device memory sync.
 }
 ```
 
-## Step 3: Configure Runtime Files
+## Step 4: Configure Runtime Files
 
 ### AGENTS.md — Memory Rules
 
@@ -117,15 +157,16 @@ Each session is a fresh start. These files _are_ your memory. Read them. Update 
 - **Dreaming**: Daily 03:00 UTC
 ```
 
-## Step 4: Set Up Cron Jobs
+## Step 5: Set Up Cron Jobs
 
 ### Dreaming Pipeline (Daily 03:00 UTC)
 
 ```bash
 # Using openclaw cron
-openclaw cron add --name "dreaming-pipeline" \
-  --schedule "0 3 * * *" \
-  --agent-id "default" \
+openclaw cron add --name "memory-dreaming-pipeline" \
+  --cron "0 3 * * *" \
+  --agent "default" \
+  --announce \
   --message "Run Dreaming pipeline: scan logs, extract insights, promote to MEMORY.md"
 ```
 
@@ -145,7 +186,7 @@ Cron schedule (UTC):
 0 10,12,14 * * * ~/.openclaw/workspace/user_workspace/scripts/sync-all.sh
 ```
 
-## Step 5: Verify Setup
+## Step 6: Verify Setup
 
 ```bash
 # Check memory status

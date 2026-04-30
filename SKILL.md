@@ -34,14 +34,14 @@ bash scripts/auto-setup.sh
 
 This script handles everything interactively:
 
-| Step | What it does | Optional? |
-|------|-------------|-----------|
+| Step | What it does | Toggle |
+|------|-------------|--------|
 | 1 | Install **Ollama** (standard or Intel edition) | `--skip-ollama` |
 | 2 | Download **bge-m3** embedding model | — |
-| 3 | **Plugin conflict check** (auto-detect & disable subconscious-personality-guardian) | — |
-| 4 | Install **memory-core** plugin | — |
+| 3 | **Plugin conflict check** (auto-detect subconscious-personality-guardian) | — |
+| 4 | Check **memory-core** plugin status | — |
 | 5 | Insert `memory-core` config into **openclaw.json** | Auto-insert on confirm |
-| 6 | Install and configure **MemOS Cloud** plugin with recommended settings | `--skip-memos` |
+| 6 | Install and configure **MemOS Cloud** plugin with critical config | `--skip-memos` |
 | 7 | Create `memory/` directory, check AGENTS.md | — |
 | 8 | Set up Dreaming **cron job** (03:00 UTC daily) | — |
 

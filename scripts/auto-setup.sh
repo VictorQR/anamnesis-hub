@@ -53,7 +53,7 @@ echo "============================================"
 echo ""
 
 # ===== Step 1: Install Ollama =====
-echo "━━━ Step 1/7: Ollama ━━━"
+echo "━━━ Step 1/8: Ollama ━━━"
 if [ "$SKIP_OLLAMA" = true ]; then
     info "Skipping (--skip-ollama)"
 elif command -v ollama &>/dev/null && curl -s http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
@@ -97,7 +97,7 @@ fi
 echo ""
 
 # ===== Step 2: Pull bge-m3 model =====
-echo "━━━ Step 2/7: Embedding Model (bge-m3) ━━━"
+echo "━━━ Step 2/8: Embedding Model (bge-m3) ━━━"
 if command -v ollama &>/dev/null; then
     if ollama list 2>/dev/null | grep -q bge-m3; then
         log "bge-m3 model already downloaded"
@@ -112,7 +112,7 @@ fi
 echo ""
 
 # ===== Step 3: Check plugin conflicts =====
-echo "━━━ Step 3/7: Plugin Conflict Check ━━━"
+echo "━━━ Step 3/8: Plugin Conflict Check ━━━"
 if [ -f "$OPENCLAW_JSON" ]; then
     if grep -q "subconscious-personality-guardian" "$OPENCLAW_JSON" 2>/dev/null; then
         warn "⚠️  CONFLICT DETECTED: subconscious-personality-guardian conflicts with memory-core!"
@@ -153,16 +153,21 @@ fi
 echo ""
 
 # ===== Step 4: Install memory-core plugin =====
-echo "━━━ Step 4/7: memory-core Plugin ━━━"
+echo "━━━ Step 4/8: memory-core Plugin ━━━"
 if command -v openclaw &>/dev/null; then
-    run openclaw plugins install memory-core 2>/dev/null && log "memory-core plugin installed" || warn "memory-core already installed or use openclaw.json"
+    # Check if plugin is already loaded
+    if openclaw plugins list 2>/dev/null | grep -q memory-core; then
+        log "memory-core plugin already loaded"
+    else
+        info "Add memory-core to openclaw.json (handled in Step 5)"
+    fi
 else
     error "openclaw CLI not found in PATH"
 fi
 echo ""
 
 # ===== Step 5: Configure openclaw.json =====
-echo "━━━ Step 4/7: Configuration ━━━"
+echo "━━━ Step 5/8: Configuration (openclaw.json) ━━━"
 if [ -f "$OPENCLAW_JSON" ]; then
     # Check if memory-core is already in config
     if grep -q "memory-core" "$OPENCLAW_JSON" 2>/dev/null; then
@@ -213,10 +218,12 @@ fi
 echo ""
 
 # ===== Step 6: MemOS Cloud Plugin (optional) =====
-echo "━━━ Step 5/7: MemOS Cloud Plugin (Optional) ━━━"
+echo "━━━ Step 6/8: MemOS Cloud Plugin (Optional) ━━━"
 if [ "$SKIP_MEMOS" = true ]; then
     info "Skipping (--skip-memos)"
-elif [ "$DRY_RUN" = false ]; then
+elif [ "$DRY_RUN" = true ]; then
+    info "Skipping MemOS Cloud config (dry-run — use without --dry-run to configure)"
+else
     read -r -p "  Install MemOS Cloud plugin for cross-device sync? [y/N]: " install_memos
     if [ "$install_memos" = "y" ] || [ "$install_memos" = "Y" ]; then
         echo ""
@@ -225,7 +232,7 @@ elif [ "$DRY_RUN" = false ]; then
         read -r -p "    Server URL (e.g. https://memos.example.com): " memos_url
         read -r -p "    API Token: " memos_token
 
-        run openclaw plugins install memos-cloud-openclaw-plugin 2>/dev/null || true
+        info "MemOS Cloud plugin will be configured in openclaw.json (no separate install needed)"
 
         run python3 -c "
 import json
@@ -289,15 +296,16 @@ echo ""
 echo "━━━ Step 8/8: Cron Jobs ━━━"
 if command -v openclaw &>/dev/null; then
     # Dreaming pipeline
-    if openclaw cron list 2>/dev/null | grep -q "dreaming\|memory-dreaming"; then
+    if openclaw cron list 2>/dev/null | grep -q "memory-dreaming"; then
         log "Dreaming cron already exists"
     else
         run openclaw cron add \
             --name "memory-dreaming-pipeline" \
-            --schedule "0 3 * * *" \
-            --agent-id "default" \
+            --cron "0 3 * * *" \
+            --agent "default" \
+            --announce \
             --message "Run Dreaming pipeline: scan session logs, extract insights via DeepSeek analysis, promote high-scoring candidates" \
-            --enabled true || warn "Could not create Dreaming cron (run manually: openclaw cron add ...)"
+            --expect-final || warn "Could not create Dreaming cron (run manually: openclaw cron add --cron '0 3 * * *' --agent default --announce --expect-final)"
         log "Dreaming cron created (03:00 UTC daily)"
     fi
 else
