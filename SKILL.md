@@ -1,6 +1,7 @@
 ---
 name: openclaw-memory-hub
 description: "Three-tier memory architecture for OpenClaw AI agents. Provides L0 runtime semantic retrieval (Ollama bge-m3 + SQLite-vec vector store), L1 working memory (daily markdown logs), L2 long-term memory (curated base file), Dreaming pipeline for automatic insight promotion, and three-way sync (Cloud ↔ Markdown ↔ Vector). Use when setting up persistent agent memory, configuring memory plugins, or building multi-layered memory systems for OpenClaw."
+version: 1.7.0
 ---
 
 # OpenClaw Memory Hub
