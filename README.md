@@ -1,10 +1,44 @@
 # 🧠 OpenClaw Memory Hub
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![OpenClaw](https://img.shields.io/badge/OpenClaw-3.x-blue)](https://openclaw.ai)
+[![ClawHub](https://img.shields.io/badge/ClawHub-openclaw--memory--hub-blue)](https://clawhub.ai/skills/openclaw-memory-hub)
 
 **Three-tier memory architecture for OpenClaw AI agents.**  
 Persistent, automated, cross-device memory that never forgets who you are.
+
+---
+
+## One-Command Setup
+
+```bash
+# Clone and run
+git clone https://github.com/VictorQR/openclaw-memory-hub.git
+cd openclaw-memory-hub
+bash scripts/auto-setup.sh
+```
+
+The interactive script handles everything:
+
+| Step | What it does | Toggle |
+|------|-------------|--------|
+| ✅ | Install **Ollama** (standard or Intel) | `--skip-ollama` |
+| ✅ | Download **bge-m3** embedding model | — |
+| ✅ | Install **memory-core** plugin | — |
+| ✅ | Configure **openclaw.json** | Auto-insert on confirm |
+| ✅ | Install **MemOS Cloud** (*optional*) | `--skip-memos` |
+| ✅ | Create `memory/` directory | — |
+| ✅ | Set up **Dreaming cron** (03:00 UTC) | — |
+
+```bash
+# Preview mode
+bash scripts/auto-setup.sh --dry-run
+
+# Skip Ollama (already installed)
+bash scripts/auto-setup.sh --skip-ollama
+
+# Skip MemOS Cloud
+bash scripts/auto-setup.sh --skip-memos
+```
 
 ---
 
@@ -13,7 +47,7 @@ Persistent, automated, cross-device memory that never forgets who you are.
 | Tier | Layer | Technology | Purpose |
 |------|-------|-----------|---------|
 | **L0** | Runtime Retrieval | memory-core + Ollama bge-m3 + SQLite-vec | Real-time semantic + BM25 hybrid search |
-| **L0** | Cloud Recall | MemOS Cloud plugin | Cross-device memory capture & recall |
+| **L0** | Cloud Recall | MemOS Cloud plugin (*optional*) | Cross-device memory capture & recall |
 | **L1** | Working Memory | `memory/YYYY-MM-DD.md` | Daily summaries, notes, decisions |
 | **L2** | Long-term Memory | `MEMORY.md` | Key facts, user profile, permanent truths |
 
@@ -21,61 +55,27 @@ Persistent, automated, cross-device memory that never forgets who you are.
 
 | Pipeline | Schedule | Job |
 |----------|----------|-----|
-| **Dreaming** | 03:00 UTC daily | Scan logs → extract insights → promote to L2 |
-| **Three-Way Sync** | 18/20/22 CST | Cloud ↔ Markdown ↔ Vector alignment |
-| **Wiki Compilation** | 04:00 UTC daily | Entity extraction → wiki vault pages |
+| **Dreaming** | 03:00 UTC daily | Scan logs → DeepSeek analysis → promote to L2 |
+| **Three-Way Sync** | 18:00 / 20:00 / 22:00 CST (*optional*) | Cloud ↔ Markdown ↔ Vector alignment |
+| **Wiki Compilation** | 04:00 UTC daily (*optional*) | Entity extraction → wiki vault pages |
 
 ---
 
-## Installation
-
-### Option 1: ClawHub (recommended)
+## Installation via ClawHub
 
 ```bash
 openclaw skills install openclaw-memory-hub
 ```
 
-### Option 2: From this repo
-
-```bash
-git clone https://github.com/VictorQR/openclaw-memory-hub.git
-cd openclaw-memory-hub
-openclaw skills install ./openclaw-memory-hub.skill
-```
-
-### Option 3: Manual copy
-
-Copy `openclaw-memory-hub` folder to your OpenClaw skills directory:
-
-```bash
-cp -r openclaw-memory-hub ~/.openclaw/workspace/skills/
-```
-
----
-
-## Quick Start
-
-```bash
-# 1. Run the memory-core setup script
-bash scripts/setup-memory-core.sh
-
-# 2. Set up cron jobs for Dreaming + Sync
-bash scripts/setup-cron.sh
-
-# 3. Verify everything works
-openclaw memory status
-openclaw memory index --force
-```
-
-See `references/setup-guide.md` for full configuration guide.
+This loads the SKILL.md into your agent's context so it knows how to set up and maintain the memory system.
 
 ---
 
 ## Prerequisites
 
 - [OpenClaw](https://openclaw.ai) >= 3.x
-- [Ollama](https://ollama.ai) with [bge-m3](https://ollama.com/library/bge-m3) model pulled
 - Node.js >= 18
+- Internet connection (for Ollama download and bge-m3 model)
 
 ---
 
@@ -83,15 +83,15 @@ See `references/setup-guide.md` for full configuration guide.
 
 ```
 openclaw-memory-hub/
-├── SKILL.md                          # Main skill entry point (loaded into context)
-├── openclaw-memory-hub.skill         # Packaged distribution file
+├── SKILL.md                          # Main skill entry (loaded into agent context)
+├── openclaw-memory-hub.skill         # Packaged .skill distribution file
+├── scripts/
+│   └── auto-setup.sh                 # One-command interactive setup script
 ├── references/
-│   ├── architecture.md              # Full architecture documentation
-│   ├── setup-guide.md               # Step-by-step installation guide
-│   └── sync-api.md                  # MemOS Cloud API reference
-└── scripts/
-    ├── setup-memory-core.sh         # One-click memory-core + Ollama setup
-    └── setup-cron.sh                # Cron configuration for pipelines
+│   ├── architecture.md               # Full architecture documentation
+│   ├── setup-guide.md                # Step-by-step manual guide
+│   └── sync-api.md                   # MemOS Cloud API reference
+└── README.md                         # This file
 ```
 
 ---
@@ -101,7 +101,7 @@ openclaw-memory-hub/
 1. **Every conversation** is automatically indexed into the vector database
 2. **Each session** retrieves relevant context via semantic + BM25 hybrid search
 3. **Daily** the Dreaming pipeline analyzes logs and promotes insights to long-term memory
-4. **Tri-hourly** the three-way sync keeps cloud, local files, and vector store aligned
+4. **Tri-hourly** (*optional*) the three-way sync keeps cloud, local files, and vector store aligned
 5. **The Agent** never starts from scratch — it remembers you across sessions
 
 ---

@@ -1,4 +1,6 @@
-# OpenClaw Memory Hub — Setup Guide
+# OpenClaw Memory Hub — Manual Setup Guide
+
+> **Tip**: Use `bash scripts/auto-setup.sh` for one-command interactive setup. This is the manual alternative.
 
 ## Prerequisites
 
