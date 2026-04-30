@@ -1,5 +1,15 @@
 #!/bin/bash
 # auto-setup.sh — Full automated environment setup for OpenClaw Memory Hub
+#
+# This script configures OpenClaw's three-tier memory architecture:
+# - L0: memory-core plugin with Ollama bge-m3 embedding + SQLite-vec
+# - L1: working memory (daily markdown logs)
+# - L2: long-term memory (MEMORY.md)
+# - Dreaming pipeline for automatic insight promotion
+#
+# It only modifies files under ~/.openclaw/ — no system-level changes
+# except Ollama installation (standard installer from ollama.com).
+#
 # Usage: bash auto-setup.sh
 # Options:
 #   --skip-ollama    Skip Ollama installation (use if already installed)
@@ -74,7 +84,7 @@ else
     case "$choice" in
         1)
             info "Installing standard Ollama..."
-            run curl -fsSL https://ollama.com/install.sh | sh
+            run sh -c 'curl -fsSL https://ollama.com/install.sh -o /tmp/ollama-install.sh && sh /tmp/ollama-install.sh && rm -f /tmp/ollama-install.sh'
             run systemctl start ollama 2>/dev/null || ollama serve &
             log "Ollama installed"
             ;;
