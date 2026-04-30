@@ -119,9 +119,84 @@ User sends message → Gateway receives
 | **Scope** | Cross-device, long-term | Single device, recent history |
 | **Conflict** | None — complementary | None — complementary |
 
+### Critical Configurations
+
+These settings in `openclaw.json` are **required** for the two plugins to work together without blocking each other:
+
+#### MemOS Cloud Plugin (`plugins.entries.memos-cloud-openclaw-plugin`)
+
+```json
+{
+  "enabled": true,
+  "config": {
+    "resetOnNew": true,
+    "recallEnabled": true,
+    "recallFilterFailOpen": true,
+    "asyncMode": true,
+    "addEnabled": true
+  },
+  "hooks": {
+    "allowConversationAccess": true
+  }
+}
+```
+
+| Setting | Why it matters |
+|---------|----------------|
+| `recallFilterFailOpen: true` | **Critical.** If MemOS recall fails (API timeout/network), don't block the pipeline — let memory-core still inject context |
+| `asyncMode: true` | **Critical.** MemOS runs asynchronously so memory-core can execute its own retrieval afterward |
+| `resetOnNew: true` | Fresh context per session — no stale data carried over |
+| `hooks.allowConversationAccess: true` | Allows hooks to read/write conversation data for memory injection |
+| `recallEnabled: true` | Enable recall at session start |
+| `addEnabled: true` | Auto-capture new memories during conversation |
+
+#### Recommended Full Config (with all tunable params)
+
+```json
+{
+  "enabled": true,
+  "config": {
+    "resetOnNew": true,
+    "recallEnabled": true,
+    "recallFilterFailOpen": true,
+    "asyncMode": true,
+    "addEnabled": true,
+    "queryPrefix": "important user context preferences decisions ",
+    "memoryLimitNumber": 9,
+    "preferenceLimitNumber": 6,
+    "relativity": 0.45,
+    "maxItemChars": 8000,
+    "includeAssistant": true,
+    "includePreference": true,
+    "tags": ["openclaw", "memory"]
+  },
+  "hooks": {
+    "allowConversationAccess": true
+  }
+}
+```
+
+#### memory-core Plugin (`plugins.entries.memory-core`)
+
+```json
+{
+  "enabled": true,
+  "config": {
+    "dreaming": {
+      "enabled": true
+    }
+  }
+}
+```
+
+`dreaming.enabled: true` activates the daily Dreaming pipeline.
+
 ### Why This Works
 
-- **No overlap**: MemOS handles 
+- **No overlap**: MemOS handles static facts; memory-core handles dynamic conversation context
+- **Fail-safe**: If MemOS Cloud is unreachable, `recallFilterFailOpen: true` keeps the pipeline running
+- **Async execution**: MemOS hooks fire async; memory-core retrieval runs independently
+- **Layered context**: Agent receives who-you-are facts first, then what-we-talked-about context
 
 ## File Anatomy
 

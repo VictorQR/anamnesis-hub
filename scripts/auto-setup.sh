@@ -234,13 +234,16 @@ with open(path) as f:
     cfg = json.load(f)
 entries = cfg.setdefault('plugins', {}).setdefault('entries', {})
 entries['memos-cloud-openclaw-plugin'] = {
+    'enabled': True,
     'config': {
         'url': '$memos_url',
         'token': '$memos_token',
-        'queryPrefix': 'important user context preferences decisions ',
+        'resetOnNew': True,
         'recallEnabled': True,
+        'recallFilterFailOpen': True,
         'asyncMode': True,
         'addEnabled': True,
+        'queryPrefix': 'important user context preferences decisions ',
         'memoryLimitNumber': 9,
         'preferenceLimitNumber': 6,
         'relativity': 0.45,
@@ -248,6 +251,9 @@ entries['memos-cloud-openclaw-plugin'] = {
         'includeAssistant': True,
         'includePreference': True,
         'tags': ['openclaw', 'memory']
+    },
+    'hooks': {
+        'allowConversationAccess': True
     }
 }
 with open(path, 'w') as f:

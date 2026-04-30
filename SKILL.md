@@ -99,6 +99,17 @@ User message
 MemOS handles "who the user is" (long-term facts).
 memory-core handles "what we talked about" (recent history).
 
+**Critical config (MemOS Cloud):**
+```json
+{
+  "recallFilterFailOpen": true,  // Don't block pipeline if API fails
+  "asyncMode": true,             // Let memory-core run too
+  "resetOnNew": true,            // Fresh context per session
+  "hooks.allowConversationAccess": true  // Hooks need this
+}
+```
+See `references/architecture.md` for the full recommended config.
+
 Both should be enabled together.
 
 ### ⚠️ MemOS Cloud + ReMe
