@@ -63,6 +63,66 @@
 - **Recall**: Injects relevant memory context into session at bootstrap
 - **Cross-device**: Syncs memory across multiple OpenClaw instances
 
+## Dual-Plugin Collaborative Workflow
+
+This is the core innovation of the architecture — **two plugins working in layers, not competing**:
+
+```
+User sends message → Gateway receives
+         │
+         ▼
+┌─────────────────────────────────────────────┐
+│ 1. MemOS Cloud Plugin                       │
+│    (before_agent_start lifecycle hook)       │
+│                                              │
+│    → Injects:                                │
+│      • Long-term facts ("User rides a 703F") │
+│      • User preferences ("Hates sweets")     │
+│      • Profile constants ("Name is Victor")  │
+│                                              │
+│    Layer: Static / low-frequency truths      │
+└──────────────────┬──────────────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────────────┐
+│ 2. memory-core                               │
+│    (Runtime semantic retrieval)               │
+│                                              │
+│    → Injects:                                │
+│      • Recent conversation snippets          │
+│      • Topically relevant past discussions   │
+│      • Working memory (today's context)      │
+│                                              │
+│    Layer: Dynamic / high-frequency context   │
+└──────────────────┬──────────────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────────────┐
+│ Agent receives complete memory context:      │
+│                                              │
+│  "Victor rides a 703F" (fact — MemOS)        │
+│  + "Yesterday discussed Zettelkasten"        │
+│    (recent — memory-core)                    │
+│  + "Today's weather forecast" (today — L1)  │
+└─────────────────────────────────────────────┘
+```
+
+### Division of Responsibility
+
+| Aspect | MemOS Cloud | memory-core |
+|--------|-------------|-------------|
+| **Data type** | Facts, preferences, profile | Conversations, working context |
+| **Frequency** | Static / rarely changes | Dynamic / every session |
+| **Source** | Cloud API (`POST /api/memo`) | Local SQLite-vec index |
+| **Trigger** | `before_agent_start` hook | Runtime semantic query |
+| **Retention** | Permanent (cloud) | Configurable (last N chunks) |
+| **Scope** | Cross-device, long-term | Single device, recent history |
+| **Conflict** | None — complementary | None — complementary |
+
+### Why This Works
+
+- **No overlap**: MemOS handles 
+
 ## File Anatomy
 
 ### Runtime Context Files
@@ -172,13 +232,23 @@ Both plugins attempt to use the same OpenClaw memory slot. Installing both cause
 
 ### ✅ memory-core + MemOS Cloud Plugin
 
-**Status: Compatible**
+**Status: Compatible — designed to work in layers**
 
-They serve different layers and work together:
-- **memory-core**: Local SQLite-vec vector DB, session-level recall
-- **MemOS Cloud**: Cloud-based cross-device memory, lifecycle hooks
+They are **not competing** memory systems. They operate at different layers with different responsibilities:
 
-No overlap — one handles local retrieval, the other handles cloud sync. Both can be enabled simultaneously.
+| | memory-core | MemOS Cloud |
+|--|-------------|-------------|
+| Role | Recent/working context | Long-term facts & preferences |
+| Data | Conversations, discussions | User profile, habits, decisions |
+| Timing | Every session (runtime query) | Session start (lifecycle hook) |
+| Storage | Local SQLite-vec | Remote cloud API |
+
+**Execution order**:
+1. MemOS Cloud fires `before_agent_start` → injects static facts
+2. memory-core queries local vector DB → injects dynamic context
+3. Agent receives layered memory: "who the user is" + "what we talked about recently"
+
+**No overlap**: One handles local retrieval, the other handles cloud sync. Both should be enabled simultaneously for best results.
 
 ### ⚠️ MemOS Cloud Plugin + ReMe
 

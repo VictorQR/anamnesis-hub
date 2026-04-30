@@ -83,7 +83,23 @@ See `references/setup-guide.md` for step-by-step manual configuration.
 
 ### ✅ memory-core + MemOS Cloud
 
-**Compatible.** They serve different layers: local vector DB vs cloud sync. No overlap.
+**Compatible — designed to work in layers.**
+
+They execute in sequence, not in competition:
+
+```
+User message
+  → MemOS Cloud (before_agent_start hook)
+      → Injects: static facts, preferences, profile
+  → memory-core (runtime semantic query)
+      → Injects: recent conversations, topical context
+  → Agent receives layered memory
+```
+
+MemOS handles "who the user is" (long-term facts).
+memory-core handles "what we talked about" (recent history).
+
+Both should be enabled together.
 
 ### ⚠️ MemOS Cloud + ReMe
 
