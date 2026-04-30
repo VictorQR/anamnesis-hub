@@ -111,8 +111,49 @@ else
 fi
 echo ""
 
-# ===== Step 3: Install memory-core plugin =====
-echo "━━━ Step 3/7: memory-core Plugin ━━━"
+# ===== Step 3: Check plugin conflicts =====
+echo "━━━ Step 3/7: Plugin Conflict Check ━━━"
+if [ -f "$OPENCLAW_JSON" ]; then
+    if grep -q "subconscious-personality-guardian" "$OPENCLAW_JSON" 2>/dev/null; then
+        warn "⚠️  CONFLICT DETECTED: subconscious-personality-guardian conflicts with memory-core!"
+        echo ""
+        echo "  Both plugins use the same memory slot. You must disable one of them."
+        echo "  Recommended: keep memory-core, disable subconscious-personality-guardian."
+        echo ""
+
+        if [ "$DRY_RUN" = false ]; then
+            read -r -p "  Auto-disable subconscious-personality-guardian? [Y/n]: " disable_guardian
+            if [ "$disable_guardian" != "n" ] && [ "$disable_guardian" != "N" ]; then
+                run python3 -c "
+import json
+path = '$OPENCLAW_JSON'
+with open(path) as f:
+    cfg = json.load(f)
+# Add to disabled list
+plugins = cfg.setdefault('plugins', {})
+disabled = plugins.setdefault('disabled', [])
+if 'subconscious-personality-guardian' not in disabled:
+    disabled.append('subconscious-personality-guardian')
+# Also add to deny list to prevent re-install
+deny = plugins.setdefault('deny', [])
+if 'subconscious-personality-guardian' not in deny:
+    deny.append('subconscious-personality-guardian')
+with open(path, 'w') as f:
+    json.dump(cfg, f, indent=2)
+"
+                log "subconscious-personality-guardian disabled"
+            else
+                warn "Manual action required: disable the conflicting plugin before using memory-core"
+            fi
+        fi
+    else
+        log "No plugin conflicts detected"
+    fi
+fi
+echo ""
+
+# ===== Step 4: Install memory-core plugin =====
+echo "━━━ Step 4/7: memory-core Plugin ━━━"
 if command -v openclaw &>/dev/null; then
     run openclaw plugins install memory-core 2>/dev/null && log "memory-core plugin installed" || warn "memory-core already installed or use openclaw.json"
 else
@@ -120,7 +161,7 @@ else
 fi
 echo ""
 
-# ===== Step 4: Configure openclaw.json =====
+# ===== Step 5: Configure openclaw.json =====
 echo "━━━ Step 4/7: Configuration ━━━"
 if [ -f "$OPENCLAW_JSON" ]; then
     # Check if memory-core is already in config
@@ -171,7 +212,7 @@ else
 fi
 echo ""
 
-# ===== Step 5: MemOS Cloud Plugin (optional) =====
+# ===== Step 6: MemOS Cloud Plugin (optional) =====
 echo "━━━ Step 5/7: MemOS Cloud Plugin (Optional) ━━━"
 if [ "$SKIP_MEMOS" = true ]; then
     info "Skipping (--skip-memos)"
@@ -219,8 +260,8 @@ with open(path, 'w') as f:
 fi
 echo ""
 
-# ===== Step 6: Create memory directory & template files =====
-echo "━━━ Step 6/7: Memory Files ━━━"
+# ===== Step 7: Create memory directory & template files =====
+echo "━━━ Step 7/8: Memory Files ━━━"
 run mkdir -p "$MEMORY_DIR"
 log "Memory directory: $MEMORY_DIR"
 
@@ -238,8 +279,8 @@ else
 fi
 echo ""
 
-# ===== Step 7: Set up cron jobs =====
-echo "━━━ Step 7/7: Cron Jobs ━━━"
+# ===== Step 8: Set up cron jobs =====
+echo "━━━ Step 8/8: Cron Jobs ━━━"
 if command -v openclaw &>/dev/null; then
     # Dreaming pipeline
     if openclaw cron list 2>/dev/null | grep -q "dreaming\|memory-dreaming"; then

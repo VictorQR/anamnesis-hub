@@ -148,6 +148,49 @@ SHA-256 hashing with salt `VictorQR_7x9K2mP` for:
 
 Stored in `MEMORY.md` hash table, verified by SHA-256 comparison before access.
 
+## Known Conflicts & Compatibility
+
+### ❌ subconscious-personality-guardian ↔ memory-core
+
+**Status: Incompatible**
+
+Both plugins attempt to use the same OpenClaw memory slot. Installing both causes:
+- Memory write conflicts (race conditions on save)
+- Retrieval logic duplication (both inject into context)
+- Context management conflicts (duplicate or conflicting memory context in prompts)
+
+**Fix**: Disable or remove `subconscious-personality-guardian`:
+```json
+// openclaw.json
+{
+  "plugins": {
+    "disabled": ["subconscious-personality-guardian"],
+    "deny": ["subconscious-personality-guardian"]
+  }
+}
+```
+
+### ✅ memory-core + MemOS Cloud Plugin
+
+**Status: Compatible**
+
+They serve different layers and work together:
+- **memory-core**: Local SQLite-vec vector DB, session-level recall
+- **MemOS Cloud**: Cloud-based cross-device memory, lifecycle hooks
+
+No overlap — one handles local retrieval, the other handles cloud sync. Both can be enabled simultaneously.
+
+### ⚠️ MemOS Cloud Plugin + ReMe
+
+**Status: Potentially conflicting**
+
+Both provide cloud memory functionality. Installing both may cause:
+- File layer overlap (both write to `memory/`)
+- Retrieval logic duplication
+- API endpoint conflicts (competing memory services)
+
+**Recommendation**: Choose one. MemOS Cloud is recommended if using OpenClaw natively.
+
 ## Performance Characteristics
 
 - **Embedding speed**: ~50ms per query on RTX 4070 Super (12GB VRAM)

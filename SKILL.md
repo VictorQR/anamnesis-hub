@@ -36,13 +36,14 @@ This script handles everything interactively:
 
 | Step | What it does | Optional? |
 |------|-------------|-----------|
-| 1 | Install **Ollama** (standard or Intel edition) | Choose on-the-fly |
+| 1 | Install **Ollama** (standard or Intel edition) | `--skip-ollama` |
 | 2 | Download **bge-m3** embedding model | — |
-| 3 | Install **memory-core** plugin | — |
-| 4 | Insert `memory-core` config into **openclaw.json** | Auto-insert with confirmation |
-| 5 | Install and configure **MemOS Cloud** plugin with recommended settings | Skip if unwanted |
-| 6 | Create `memory/` directory, check AGENTS.md | — |
-| 7 | Set up Dreaming **cron job** (03:00 UTC daily) | — |
+| 3 | **Plugin conflict check** (auto-detect & disable subconscious-personality-guardian) | — |
+| 4 | Install **memory-core** plugin | — |
+| 5 | Insert `memory-core` config into **openclaw.json** | Auto-insert on confirm |
+| 6 | Install and configure **MemOS Cloud** plugin with recommended settings | `--skip-memos` |
+| 7 | Create `memory/` directory, check AGENTS.md | — |
+| 8 | Set up Dreaming **cron job** (03:00 UTC daily) | — |
 
 ### Options
 
@@ -63,6 +64,32 @@ See `references/setup-guide.md` for step-by-step manual configuration.
 - Installing MemOS Cloud plugin for cross-device sync
 - Setting up automatic Dreaming and promotion pipelines
 - Configuring three-way sync between cloud, files, and vector DB
+
+## Plugin Conflicts
+
+### ❌ subconscious-personality-guardian ↔ memory-core
+
+**Incompatible.** Both use the same OpenClaw memory slot. Installing both causes write conflicts and retrieval duplication.
+
+**Fix**: `auto-setup.sh` detects and disables this automatically. Manual fix:
+```json
+{
+  "plugins": {
+    "disabled": ["subconscious-personality-guardian"],
+    "deny": ["subconscious-personality-guardian"]
+  }
+}
+```
+
+### ✅ memory-core + MemOS Cloud
+
+**Compatible.** They serve different layers: local vector DB vs cloud sync. No overlap.
+
+### ⚠️ MemOS Cloud + ReMe
+
+**Potentially conflicting.** File layer overlap and retrieval duplication. Choose one.
+
+See `references/architecture.md` for full compatibility details.
 
 ## Components
 

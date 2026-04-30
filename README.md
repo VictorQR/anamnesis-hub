@@ -23,6 +23,7 @@ The interactive script handles everything:
 |------|-------------|--------|
 | ✅ | Install **Ollama** (standard or Intel) | `--skip-ollama` |
 | ✅ | Download **bge-m3** embedding model | — |
+| ✅ | **Plugin conflict check** (auto-detect subconscious-personality-guardian) | — |
 | ✅ | Install **memory-core** plugin | — |
 | ✅ | Configure **openclaw.json** | Auto-insert on confirm |
 | ✅ | Install **MemOS Cloud** (*optional*) | `--skip-memos` |
