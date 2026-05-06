@@ -93,22 +93,55 @@ openclaw memory status
 
 Required for cross-device memory sync.
 
-### In `openclaw.json`:
+### Recommended Full Config (in `openclaw.json`):
 
 ```json
 {
   "plugins": {
     "entries": {
       "memos-cloud-openclaw-plugin": {
+        "enabled": true,
         "config": {
           "url": "https://your-memos-server.com",
-          "token": "your-memos-api-token"
+          "token": "your-memos-api-token",
+          "resetOnNew": true,
+          "recallEnabled": true,
+          "recallFilterFailOpen": true,
+          "asyncMode": true,
+          "addEnabled": true,
+          "queryPrefix": "important user context preferences decisions ",
+          "memoryLimitNumber": 9,
+          "preferenceLimitNumber": 6,
+          "relativity": 0.45,
+          "maxItemChars": 8000,
+          "includeAssistant": true,
+          "includePreference": true,
+          "tags": ["openclaw", "memory"]
+        },
+        "hooks": {
+          "allowConversationAccess": true
         }
       }
     }
   }
 }
 ```
+
+**Key parameters explained:**
+
+| Parameter | Value | Why |
+|-----------|-------|-----|
+| `recallFilterFailOpen` | `true` | Don't block pipeline if MemOS API is unreachable — let memory-core still serve context |
+| `asyncMode` | `true` | Run asynchronously so memory-core can execute its own retrieval |
+| `resetOnNew` | `true` | Fresh context per session, no stale data carried over |
+| `queryPrefix` | `"important user context preferences decisions "` | Semantic anchor to prioritize recall relevance |
+| `memoryLimitNumber` | `9` | Max recalled memory items per session |
+| `preferenceLimitNumber` | `6` | Max recalled preference items per session |
+| `relativity` | `0.45` | Relevance threshold — filter out low-confidence matches |
+| `maxItemChars` | `8000` | Max characters per memory item |
+| `includeAssistant` | `true` | Include AI's own past outputs as memory context |
+| `includePreference` | `true` | Include detected user preferences in recall |
+| `tags` | `["openclaw", "memory"]` | Tagging for multi-instance filtering |
 
 ## Step 4: Configure Runtime Files
 
