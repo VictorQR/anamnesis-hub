@@ -203,6 +203,43 @@ openclaw cron add --name "memory-dreaming-pipeline" \
   --message "Run Dreaming pipeline: scan logs, extract insights, promote to MEMORY.md"
 ```
 
+### Active Memory (Built-in Plugin)
+
+Enable in `openclaw.json` to activate pre-reply sub-agent memory search:
+
+```json5
+{
+  plugins: {
+    entries: {
+      "active-memory": {
+        enabled: true,
+        config: {
+          enabled: true,
+          agents: ["main"],
+          allowedChatTypes: ["direct"],
+          promptStyle: "balanced",
+          timeoutMs: 15000,
+          modelFallback: "ollama/qwen3:8b",
+        },
+      },
+    },
+  },
+}
+```
+
+### auto-memory v2 (18:30, 22:30 CST)
+
+Place `scripts/auto_memory_extract.py` in `user_workspace/scripts/` and install the `auto-memory` skill:
+
+```bash
+openclaw cron add --name "auto-memory-extract" \
+  --cron "30 18,22 * * *" \
+  --tz "Asia/Shanghai" \
+  --task "python3 user_workspace/scripts/auto_memory_extract.py --mode full"
+```
+
+Requires MemOS Cloud plugin + sync to provide input data (`memos-cloud-*.md` files).
+
 ### Three-Way Sync (18:00, 20:00, 22:00 CST)
 
 Place sync scripts in `user_workspace/scripts/`:

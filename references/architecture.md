@@ -20,6 +20,11 @@
 │  └────────┬────────┘  └────────┬─────────┘  │
 │           │                     │            │
 │  ┌────────▼─────────────────────▼─────────┐  │
+│  │  Active Memory (built-in plugin)       │  │
+│  │  Pre-reply sub-agent memory search     │  │
+│  └────────┬───────────────────────────────┘  │
+│           │                                  │
+│  ┌────────▼───────────────────────────────┐  │
 │  │  Hybrid Search (semantic + BM25)       │  │
 │  └────────────────┬───────────────────────┘  │
 └───────────────────┼──────────────────────────┘
@@ -240,6 +245,26 @@ Output delivered via QQ:
 - 📄 REM Backfill: status report
 - 🔬 DeepSeek 分析: extracted insights count
 - 🌙 Dreaming Promotion: promoted count
+
+### auto-memory v2
+
+Runs at **18:30 / 22:30 CST** (30 min after three-way sync):
+
+Reads the latest MemOS Cloud synced facts from `memory/memos-cloud-YYYY-MM-DD.md` (the most recent sync batch), filters noise (system cron entries, duplicates), and uses local qwen3:8b to extract structured long-term memories into `MEMORY.md`.
+
+```
+agent_end → MemOS Cloud (real-time capture + cloud LLM extraction)
+              ↓
+        sync-cloud-pull.py (every 30 min)
+              ↓
+        memos-cloud-YYYY-MM-DD.md (structured facts)
+              ↓
+        auto_memory_extract.py → qwen3 filter + dedup
+              ↓
+        MEMORY.md「Auto-Extracted」section
+```
+
+**Key difference from v1 (session-corpus reading)**: V2 reads already-extracted facts from MemOS Cloud instead of raw conversation text. qwen3 only formats + deduplicates, no heavy re-extraction needed. Input size: ~1.8KB vs v1's 3.5KB truncated corpus.
 
 ### Three-Way Sync
 

@@ -1,29 +1,73 @@
 ---
 name: openclaw-memory-hub
-description: "三层记忆架构 (Three-tier memory architecture for OpenClaw AI agents). 提供 L0 运行时语义检索 (Ollama bge-m3 + SQLite-vec 向量库)、L1 工作记忆 (每日 Markdown 日志)、L2 长期记忆 (只读基底)、Dreaming 自动化提炼管线、三方同步 (Cloud ↔ Markdown ↔ Vector)。适用于首次配置持久化记忆、安装 memory-core/MemOS Cloud 插件、搭建多层记忆系统。"
-version: 1.8.0
+description: "三层记忆架构 (Three-tier memory architecture for OpenClaw AI agents). 提供 L0 运行时语义检索 (Ollama bge-m3 + SQLite-vec 向量库)、L1 工作记忆 (每日 Markdown 日志)、L2 长期记忆 (只读基底)、Dreaming 自动化提炼管线、三方同步 (Cloud ↔ Markdown ↔ Vector)、Active Memory 主动召回、auto-memory 自动提取、cross-platform-writer 跨平台写入。适用于首次配置持久化记忆、安装 memory-core/MemOS Cloud 插件、搭建多层记忆系统。"
+version: 1.9.0
 ---
 
 # OpenClaw Memory Hub
 
-Three-tier memory architecture with automated Dreaming pipeline and three-way synchronization.
+Three-tier memory architecture with automated Dreaming pipeline, three-way synchronization, Active Memory recall, and auto-extraction.
 
 ## Overview
-
-This architecture solves AI amnesia across sessions by layering memory at three levels:
 
 | Tier | Layer | Technology | Purpose |
 |------|-------|-----------|---------|
 | **L0** | Runtime Retrieval | memory-core plugin (Ollama bge-m3 → SQLite + sqlite-vec) | Real-time semantic + BM25 hybrid search |
 | **L0** | Cloud Recall | MemOS Cloud plugin (*optional*) | Cross-device memory capture and recall |
-| **L1** | Working Memory | `memory/YYYY-MM-DD.md` files | Daily summaries, todos, technical notes (30–90 day retention) |
+| **L0** | Active Memory | Built-in OpenClaw plugin | Pre-reply sub-agent memory search + context injection |
+| **L1** | Working Memory | `memory/YYYY-MM-DD.md` files | Daily summaries, todos, technical notes |
 | **L2** | Long-term Memory | `MEMORY.md` (read-only base) | Key facts, user profile, permanent decisions |
 
 ### Automated Pipelines
 
-- **Dreaming (03:00 UTC daily)**: Scans conversation logs, evaluates candidates via DeepSeek analysis, promotes high-scoring insights to L2
-- **Three-way Sync (18:00 / 20:00 / 22:00 CST)**: Keeps Cloud ↔ Markdown ↔ Vector stores in sync
-- **Wiki Compilation (04:00 UTC daily, *optional*)**: Extracts entities and concepts, writes structured wiki vault pages
+| Pipeline | Schedule | Description |
+|----------|----------|-------------|
+| **Dreaming** | 03:00 UTC daily | Scan logs → DeepSeek analysis → promote to L2 |
+| **Three-way Sync** | 18:00 / 20:00 / 22:00 CST | Cloud ↔ Markdown ↔ Vector alignment |
+| **auto-memory v2** | 18:30 / 22:30 CST | Read MemOS Cloud facts → qwen3 filter + dedup → MEMORY.md |
+| **Workspace Cleaner** | 19:00 CST | Auto-clean working directory |
+| **REM Backfill** | 19:30 CST | Feed short-term recall pipeline |
+| **DeepSeek Analysis** | 20:30 CST | Deep historical session analysis → DB |
+| **Wiki Compilation** | 21:00 CST (*optional*) | Extract entities → wiki vault pages |
+
+### Memory Flow
+
+```
+agent_end → MemOS Cloud (real-time capture + cloud LLM extraction)
+              ↓
+        sync-cloud-pull.py (every 30 min)
+              ↓
+        memos-cloud-YYYY-MM-DD.md (structured facts)
+              ↓
+        auto-memory.py → qwen3 filter/dedup → MEMORY.md
+
+before_agent_start → MemOS Cloud recall + Active Memory sub-agent + memory-core
+              ↓
+        Layered context injected before reply
+```
+
+## Bundled Skills
+
+This package includes two auxiliary skills:
+
+### 1. cross-platform-writer
+
+**Path**: `skills/cross-platform-writer/`
+**Script**: `skills/cross-platform-writer/scripts/write_file.py`
+
+Replaces OpenClaw's built-in `write` tool for text file creation. Auto-detects encoding (utf-8/utf-8-sig/gbk), handles BOM, and adapts line endings (CRLF/LF) per platform.
+
+When writing text files: write to temp → run `write_file.py` → cleanup.
+
+### 2. auto-memory
+
+**Path**: `skills/auto-memory/`
+**Script**: `scripts/auto_memory_extract.py`
+
+Reads the latest MemOS Cloud synced facts (`memos-cloud-YYYY-MM-DD.md`), filters noise (system crons, duplicates), and uses local qwen3:8b to extract structured long-term memories into `MEMORY.md`.
+
+Manual trigger: "提取记忆" / "同步记忆" / "整理记忆"
+Cron: 18:30 / 22:30 CST (`30 18,22 * * *`)
 
 ## Setup
 
@@ -33,25 +77,12 @@ This architecture solves AI amnesia across sessions by layering memory at three 
 bash scripts/auto-setup.sh
 ```
 
-This script handles everything interactively:
-
-| Step | What it does | Toggle |
-|------|-------------|--------|
-| 1 | Install **Ollama** (standard or Intel edition) | `--skip-ollama` |
-| 2 | Download **bge-m3** embedding model | — |
-| 3 | **Plugin conflict check** (auto-detect subconscious-personality-guardian) | — |
-| 4 | Check **memory-core** plugin status | — |
-| 5 | Insert `memory-core` config into **openclaw.json** | Auto-insert on confirm |
-| 6 | Install and configure **MemOS Cloud** plugin with critical config | `--skip-memos` |
-| 7 | Create `memory/` directory, check AGENTS.md | — |
-| 8 | Set up Dreaming **cron job** (03:00 UTC daily) | — |
-
 ### Options
 
 ```bash
-bash scripts/auto-setup.sh --skip-ollama   # Skip Ollama install (use your existing one)
-bash scripts/auto-setup.sh --skip-memos    # Skip MemOS Cloud plugin entirely
-bash scripts/auto-setup.sh --dry-run       # Preview without making changes
+bash scripts/auto-setup.sh --skip-ollama   # Skip Ollama install
+bash scripts/auto-setup.sh --skip-memos    # Skip MemOS Cloud
+bash scripts/auto-setup.sh --dry-run       # Preview only
 ```
 
 ### Manual setup
@@ -63,16 +94,19 @@ See `references/setup-guide.md` for step-by-step manual configuration.
 - Setting up OpenClaw memory for the first time
 - Configuring memory-core plugin with local Ollama embedding
 - Installing MemOS Cloud plugin for cross-device sync
-- Setting up automatic Dreaming and promotion pipelines
-- Configuring three-way sync between cloud, files, and vector DB
+- Enabling Active Memory for pre-reply context injection
+- Setting up auto-memory pipeline for MEMORY.md curation
+- Installing cross-platform-writer for cross-OS file compatibility
+- Configuring automatic Dreaming and promotion pipelines
+- Setting up three-way sync between cloud, files, and vector DB
 
 ## Plugin Conflicts
 
 ### ❌ subconscious-personality-guardian ↔ memory-core
 
-**Incompatible.** Both use the same OpenClaw memory slot. Installing both causes write conflicts and retrieval duplication.
+**Incompatible.** Both use the same OpenClaw memory slot.
 
-**Fix**: `auto-setup.sh` detects and disables this automatically. Manual fix:
+**Fix**: Disable in openclaw.json:
 ```json
 {
   "plugins": {
@@ -86,66 +120,31 @@ See `references/setup-guide.md` for step-by-step manual configuration.
 
 **Compatible — designed to work in layers.**
 
-They execute in sequence, not in competition:
+```
+User message → MemOS Cloud (static facts) → memory-core (recent context)
+```
+
+### ✅ Active Memory + MemOS Cloud + memory-core
+
+**Compatible — triple-layer recall.**
 
 ```
 User message
-  → MemOS Cloud (before_agent_start hook)
-      → Injects: static facts, preferences, profile
-  → memory-core (runtime semantic query)
-      → Injects: recent conversations, topical context
-  → Agent receives layered memory
+  → Active Memory sub-agent (searches all memory stores)
+  → MemOS Cloud (injects long-term facts & preferences)
+  → memory-core (semantic + BM25 hybrid retrieval)
+  → Agent receives layered context
 ```
 
-MemOS handles "who the user is" (long-term facts).
-memory-core handles "what we talked about" (recent history).
+### ✅ auto-memory + MemOS Cloud
 
-**Critical config (MemOS Cloud):**
-```json
-{
-  "recallFilterFailOpen": true,  // Don't block pipeline if API fails
-  "asyncMode": true,             // Let memory-core run too
-  "resetOnNew": true,            // Fresh context per session
-  "hooks.allowConversationAccess": true  // Hooks need this
-}
-```
-See `references/architecture.md` for the full recommended config.
-
-Both should be enabled together.
-
-### ⚠️ MemOS Cloud + ReMe
-
-**Potentially conflicting.** File layer overlap and retrieval duplication. Choose one.
-
-See `references/architecture.md` for full compatibility details.
+**Designed to work together.** MemOS captures at `agent_end`, syncs to local files, then auto-memory reads those files for MEMORY.md curation.
 
 ## Components
 
 ### 1. Memory Plugins (L0)
 
-Configured via `openclaw.json`:
-
-```json
-{
-  "plugins": {
-    "entries": {
-      "memory-core": {
-        "config": {
-          "embeddingUrl": "http://127.0.0.1:11434/api/embed",
-          "embeddingModel": "bge-m3",
-          "dimension": 1024
-        }
-      },
-      "memos-cloud-openclaw-plugin": {
-        "config": {
-          "url": "https://your-memos-server",
-          "token": "your-token"
-        }
-      }
-    }
-  }
-}
-```
+See `references/architecture.md` for full configuration.
 
 ### 2. Memory Files (L1 + L2)
 
@@ -155,20 +154,26 @@ Configured via `openclaw.json`:
 │   ├── YYYY-MM-DD.md          # Daily working memory (auto-indexed)
 │   ├── MEMORY_INDEX.md        # Vector BM25 cluster summaries
 │   ├── memos-cloud-*.md       # Cloud-pulled memory entries
-│   ├── .sync-cloud-state.json # Cloud pull cursor
-│   └── .sync-push-state.json  # Push state (SHA256 tracking)
-├── MEMORY.md                  # Long-term memory base (read-only)
+│   └── .sync-*.json           # Sync state files
+├── MEMORY.md                  # Long-term memory base
 ├── AGENTS.md                  # Runtime context + memory rules
-└── SOUL.md                    # Agent persona
+└── user_workspace/
+    ├── scripts/
+    │   ├── auto_memory_extract.py  # auto-memory v2
+    │   └── sync-*.py               # Sync scripts
+    └── skills/
+        ├── cross-platform-writer/  # Encoding-safe file writer
+        └── auto-memory/            # Auto extraction skill
 ```
 
-### 3. Sync Scripts (*optional*)
+### 3. Sync Scripts
 
 Located at `user_workspace/scripts/`:
 - `sync-cloud-pull.py` — Pull from MemOS Cloud → Markdown files
 - `sync-cloud-push.py` — Push local markdown changes → Cloud (SHA256 diff)
 - `sync-vector-index.py` — Vector DB → MEMORY_INDEX.md (FTS5 BM25 clustering)
 - `sync-all.sh` — Orchestrator that runs all three
+- `auto_memory_extract.py` — auto-memory v2 extraction
 
 See `references/sync-api.md` for MemOS Cloud API details.
 
@@ -177,4 +182,7 @@ See `references/sync-api.md` for MemOS Cloud API details.
 - `references/architecture.md` — Detailed architecture documentation
 - `references/setup-guide.md` — Complete manual setup guide with templates
 - `references/sync-api.md` — MemOS Cloud API reference
-- `scripts/auto-setup.sh` — One-command interactive setup (recommended)
+- `scripts/auto-setup.sh` — One-command interactive setup
+- `scripts/auto_memory_extract.py` — auto-memory v2 script
+- `skills/cross-platform-writer/` — Cross-platform text file writer skill
+- `skills/auto-memory/` — Auto memory extraction skill
