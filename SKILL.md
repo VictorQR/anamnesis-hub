@@ -1,7 +1,7 @@
 ---
 name: openclaw-memory-hub
 description: "三层记忆架构 (Three-tier memory architecture for OpenClaw AI agents). 提供 L0 运行时语义检索 (Ollama bge-m3 + SQLite-vec 向量库)、L1 工作记忆 (每日 Markdown 日志)、L2 长期记忆 (只读基底)、Dreaming 自动化提炼管线、三方同步 (Cloud ↔ Markdown ↔ Vector)、Active Memory 主动召回、auto-memory 自动提取、cross-platform-writer 跨平台写入。适用于首次配置持久化记忆、安装 memory-core/MemOS Cloud 插件、搭建多层记忆系统。"
-version: 1.9.0
+version: 1.10.0
 ---
 
 # OpenClaw Memory Hub
@@ -24,9 +24,9 @@ Three-tier memory architecture with automated Dreaming pipeline, three-way synch
 |----------|----------|-------------|
 | **Dreaming** | 03:00 UTC daily | Scan logs → DeepSeek analysis → promote to L2 |
 | **Three-way Sync** | 18:00 / 20:00 / 22:00 CST | Cloud ↔ Markdown ↔ Vector alignment |
-| **auto-memory v2** | 18:30 / 22:30 CST | Read MemOS Cloud facts → qwen3 filter + dedup → MEMORY.md |
+| **auto-memory v2** | 18:30 / 22:30 CST | Read MemOS Cloud facts → qwen3 filter + memos-extractor-0.6b → MEMORY.md |
 | **Workspace Cleaner** | 19:00 CST | Auto-clean working directory |
-| **REM Backfill** | 19:30 CST | Feed short-term recall pipeline |
+| **REM Backfill** | 21:30 CST | Feed short-term recall pipeline (after DeepSeek) |
 | **DeepSeek Analysis** | 20:30 CST | Deep historical session analysis → DB |
 | **Wiki Compilation** | 21:00 CST (*optional*) | Extract entities → wiki vault pages |
 
@@ -35,13 +35,16 @@ Three-tier memory architecture with automated Dreaming pipeline, three-way synch
 ```
 agent_end → MemOS Cloud (real-time capture + cloud LLM extraction)
               ↓
-        sync-cloud-pull.py (every 30 min)
+        sync-cloud-pull.py (18/20/22 CST)
               ↓
-        memos-cloud-YYYY-MM-DD.md (structured facts)
+        user_workspace/memos-cloud-cache/ (v1.10: isolated from index)
               ↓
-        auto-memory.py → qwen3 filter/dedup → MEMORY.md
+        auto-memory.py → qwen3 filter + memos-extractor-0.6b → MEMORY.md
+                                (dual-channel: qwen3 dedup + extractor structured supplement)
 
-before_agent_start → MemOS Cloud recall + Active Memory sub-agent + memory-core
+before_agent_start → MemOS Cloud recall (with recall_filter: local qwen3:8b)
+                  + Active Memory sub-agent
+                  + memory-core (bge-m3 + BM25, v1.10: zero dirty chunks)
               ↓
         Layered context injected before reply
 ```
@@ -136,9 +139,9 @@ User message
   → Agent receives layered context
 ```
 
-### ✅ auto-memory + MemOS Cloud
+### ✅ auto-memory + MemOS Cloud + memos-extractor
 
-**Designed to work together.** MemOS captures at `agent_end`, syncs to local files, then auto-memory reads those files for MEMORY.md curation.
+**Designed to work together.** MemOS captures at `agent_end`, syncs to local files, then auto-memory reads those files for MEMORY.md curation. v1.10 adds a second channel: memos-extractor-0.6b API (MemOS self-developed model) returns structured facts + preferences, cross-validated against qwen3 output.
 
 ## Components
 
@@ -153,13 +156,14 @@ See `references/architecture.md` for full configuration.
 ├── memory/
 │   ├── YYYY-MM-DD.md          # Daily working memory (auto-indexed)
 │   ├── MEMORY_INDEX.md        # Vector BM25 cluster summaries
-│   ├── memos-cloud-*.md       # Cloud-pulled memory entries
 │   └── .sync-*.json           # Sync state files
 ├── MEMORY.md                  # Long-term memory base
 ├── AGENTS.md                  # Runtime context + memory rules
 └── user_workspace/
+    ├── memos-cloud-cache/         # v1.10: Cloud-pulled memory (isolated from index)
+    │   └── memos-cloud-*.md       #     Auto-clean >7 days
     ├── scripts/
-    │   ├── auto_memory_extract.py  # auto-memory v2
+    │   ├── auto_memory_extract.py  # auto-memory v2 (dual-channel)
     │   └── sync-*.py               # Sync scripts
     └── skills/
         ├── cross-platform-writer/  # Encoding-safe file writer
@@ -169,11 +173,11 @@ See `references/architecture.md` for full configuration.
 ### 3. Sync Scripts
 
 Located at `user_workspace/scripts/`:
-- `sync-cloud-pull.py` — Pull from MemOS Cloud → Markdown files
+- `sync-cloud-pull.py` — Pull from MemOS Cloud → memos-cloud-cache/ (v1.10: isolated from memory/)
 - `sync-cloud-push.py` — Push local markdown changes → Cloud (SHA256 diff)
 - `sync-vector-index.py` — Vector DB → MEMORY_INDEX.md (FTS5 BM25 clustering)
-- `sync-all.sh` — Orchestrator that runs all three
-- `auto_memory_extract.py` — auto-memory v2 extraction
+- `sync-all.sh` — Orchestrator: pull → push → vector-index → cache cleanup (>7d) → reindex
+- `auto_memory_extract.py` — auto-memory v2 extraction (dual-channel: qwen3 + memos-extractor)
 
 See `references/sync-api.md` for MemOS Cloud API details.
 
