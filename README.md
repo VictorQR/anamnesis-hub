@@ -1,7 +1,7 @@
 # 🧠 Victor Memory Hub
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![ClawHub](https://img.shields.io/badge/ClawHub-openclaw--memory--hub-blue)](https://clawhub.ai/skills/victor-memory-hub)
+[![ClawHub](https://img.shields.io/badge/ClawHub-openclaw--memory--hub-blue)](https://clawhub.ai/skills/anamnesis-hub)
 
 **Three-tier memory architecture for OpenClaw AI agents.**  
 Persistent, automated, cross-device memory that never forgets.
@@ -37,8 +37,8 @@ Victor Memory Hub 是一套面向 OpenClaw AI Agent 的**四层记忆架构**，
 
 ```bash
 # Clone and run
-git clone https://github.com/VictorQR/victor-memory-hub.git
-cd victor-memory-hub
+git clone https://github.com/VictorQR/anamnesis-hub.git
+cd anamnesis-hub
 bash scripts/auto-setup.sh
 ```
 
@@ -94,7 +94,7 @@ bash scripts/auto-setup.sh --skip-memos
 ## Installation via ClawHub
 
 ```bash
-openclaw skills install victor-memory-hub
+openclaw skills install anamnesis-hub
 ```
 
 This loads the SKILL.md into your agent's context so it knows how to set up and maintain the memory system.
@@ -112,9 +112,9 @@ This loads the SKILL.md into your agent's context so it knows how to set up and 
 ## Skill Structure
 
 ```
-victor-memory-hub/
+anamnesis-hub/
 ├── SKILL.md                          # Main skill entry (loaded into agent context)
-├── victor-memory-hub.skill         # Packaged .skill distribution file
+├── anamnesis-hub.skill         # Packaged .skill distribution file
 ├── scripts/
 │   └── auto-setup.sh                 # One-command interactive setup script
 ├── references/

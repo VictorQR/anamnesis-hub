@@ -231,7 +231,7 @@ memory/
 ├── projects/
 │   ├── README.md          # Project memory index
 │   ├── clawguard.md       # Per-project memory (clawguard)
-│   ├── victor-memory-hub.md
+│   ├── anamnesis-hub.md
 │   └── openclaw-dir-inventory.md
 ```
 
@@ -248,7 +248,7 @@ Each GitHub project gets an independent `memory/projects/{slug}.md` file:
 facts.db `aliases` table maps colloquial names to canonical entities:
 - "软路由" → "iStoreOS"
 - "小爱" → "卧室小爱音箱"
-- "victor-memory-hub" → "victor-memory-hub"
+- "anamnesis-hub" → "anamnesis-hub"
 
 Enables natural language queries like "软路由的IP是多少" to resolve to `SELECT * FROM facts WHERE entity='iStoreOS' AND key='ip'`.
 

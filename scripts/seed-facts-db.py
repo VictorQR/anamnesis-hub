@@ -168,7 +168,7 @@ def seed_aliases(conn: sqlite3.Connection):
         ("小爱", "卧室小爱音箱"), ("小爱同学", "卧室小爱音箱"),
         ("emby", "Emby"), ("Emby服务器", "Emby"),
         ("workspace", "/home/victor/.openclaw/workspace"),
-        ("memory-hub", "openclaw-memory-hub"), ("hub", "openclaw-memory-hub"),
+        ("memory-hub", "anamnesis-hub"), ("hub", "anamnesis-hub"),
     ]
     for alias, entity in aliases:
         try:
