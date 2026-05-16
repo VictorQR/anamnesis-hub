@@ -8,7 +8,7 @@
 4. **Multi-language**: bge-m3 supports 100+ languages, 1024-dim vectors
 5. **DAG-based composition**: memory-core uses DAG for multi-agent memory lineage
 
-## Three-Tier Architecture
+## Four-Tier Architecture
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -37,6 +37,9 @@
 │  - TODOs & reminders                         │
 │  - Hand-editable, human-readable             │
 └───────────────────┬──────────────────────────┘
+             L2a — Index Layer (MEMORY.md, ~90 lines)
+             L2b — Archive Layer (ARCHIVE.md, ~220 lines)
+             L2c — Knowledge Graph (facts.sqlite)
                     │  Dreaming pipeline
                     │  (Daily 03:00 UTC)
                     ▼
@@ -246,11 +249,15 @@ Output delivered via QQ:
 - 🔬 DeepSeek 分析: extracted insights count
 - 🌙 Dreaming Promotion: promoted count
 
-### auto-memory v2
+### auto-memory v3 (Two-Stage Pipeline)
 
 Runs at **18:30 / 22:30 CST** (30 min after three-way sync):
 
-Reads the latest MemOS Cloud synced facts from `memory/memos-cloud-YYYY-MM-DD.md` (the most recent sync batch), filters noise (system cron entries, duplicates), and uses local qwen3:8b to extract structured long-term memories into `MEMORY.md`.
+Reads the latest MemOS Cloud synced facts, filters noise, and writes in two stages:
+1. **Stage 1 — ARCHIVE.md archive**: Full entries with SHA-256 dedup, organized under `## Auto-Extracted 历史归档`
+2. **Stage 2 — MEMORY.md summary**: One-line index like `Auto-Extracted ({date}): {n} 条新记忆 → ARCHIVE.md:{line}`
+
+**Key difference from v2**: No longer appends raw entries to MEMORY.md. Detailed content goes to ARCHIVE.md, only a summary line stays in MEMORY.md.
 
 ```
 agent_end → MemOS Cloud (real-time capture + cloud LLM extraction)
@@ -259,12 +266,13 @@ agent_end → MemOS Cloud (real-time capture + cloud LLM extraction)
               ↓
         memos-cloud-YYYY-MM-DD.md (structured facts)
               ↓
-        auto_memory_extract.py → qwen3 filter + dedup
+        auto_memory_extract.py → qwen3 filter + memos-extractor-0.6b
               ↓
-        MEMORY.md「Auto-Extracted」section
+        ┌─ Stage 1: ARCHIVE.md (完整归档, SHA-256 去重)
+        └─ Stage 2: MEMORY.md (一行摘要, 不写入详细内容)
 ```
 
-**Key difference from v1 (session-corpus reading)**: V2 reads already-extracted facts from MemOS Cloud instead of raw conversation text. qwen3 only formats + deduplicates, no heavy re-extraction needed. Input size: ~1.8KB vs v1's 3.5KB truncated corpus.
+**Key difference from v2**: No longer appends raw entries to MEMORY.md. Two-stage pipeline ensures ARCHIVE.md gets full content with SHA-256 dedup, and MEMORY.md stays clean as a pure index layer (~90 lines).
 
 ### Three-Way Sync
 
@@ -290,12 +298,43 @@ Runs at **18:00 / 20:00 / 22:00 CST** (covering user active hours 19–23):
 ### Wiki Compilation (Planned)
 
 Runs daily at **04:00 UTC** after Dreaming completes:
-
 - Scan memory-core DB + latest Dreaming output
 - Extract new entities, concepts, syntheses
 - Deduplicate via fuzzy filename matching
 - Write new wiki vault pages
 - Report new page count only
+
+### session-extract
+
+Runs at **22:00 CST** as part of unified pipeline:
+- Scans `~/.openclaw/agents/main/sessions/` JSONL files
+- Two-pass extraction via MemOS extractor + reranker
+- **Pass 1**: `.jsonl` → `.analyzed1` → `.learnings/ERRORS.md` + `.learnings/LEARNINGS.md`
+- **Pass 2**: `.analyzed1` → `.analyzed2` → archive to trash
+- Output: `.learnings/` (permanent) + `memory/YYYY-MM-DD.md`
+- State tracking: `memory/.session-extract-state.json`
+- Auto-skips running session to prevent corruption
+
+### facts.db Activation & Decay
+
+**facts.db** provides structured entity/key/value lookup with Hebbian activation:
+
+| Component | Mechanism |
+|-----------|----------|
+| **Activation** | Each fact query triggers `activation += 0.5, access_count += 1` |
+| **Daily Decay** | Non-permanent facts: `activation *= 0.95` (floor: 0.005) |
+| **Classification** | HOT (>2.0) / WARM (0.02~2.0) / COOL (<0.02) |
+| **GC Candidates** | COOL facts flagged for review, not auto-deleted |
+
+### LCM Pre-Write Protection
+
+Configured in `openclaw.json` under `agents.defaults.memoryFlush`:
+- `enabled: true` — activate pre-compaction flush
+- `triggerPercent: 80` — flush when context window reaches 80%
+- `flushTo: memory/YYYY-MM-DD.md` — write critical decisions to daily log
+- `flushMode: critical_decisions_only` — preserve confirmed decisions, skip noise
+
+This prevents the "Summer Yue scenario" where compaction causes loss of chat-only instructions.
 
 ## Sensitive Information
 
