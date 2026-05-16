@@ -93,7 +93,7 @@ memory/
 | 文件 | GitHub | 说明 |
 |------|--------|------|
 | `clawguard.md` | VictorQR/clawguard | 安全守护插件 |
-| `memory-hub.md` | VictorQR/memory-hub | 记忆架构 hub |
+| `victor-memory-hub.md` | VictorQR/victor-memory-hub | 记忆架构 hub |
 | `openclaw-dir-inventory.md` | VictorQR/openclaw-dir-inventory | 目录清单管理 |
 
 ---
