@@ -1,12 +1,12 @@
 ---
 name: openclaw-memory-hub
-description: "三层记忆架构 (Three-tier memory architecture for OpenClaw AI agents). 提供 L0 运行时语义检索 (Ollama bge-m3 + SQLite-vec 向量库)、L1 工作记忆 (每日 Markdown 日志)、L2 长期记忆 (只读基底)、Dreaming 自动化提炼管线、三方同步 (Cloud ↔ Markdown ↔ Vector)、Active Memory 主动召回、auto-memory 自动提取、cross-platform-writer 跨平台写入。适用于首次配置持久化记忆、安装 memory-core/MemOS Cloud 插件、搭建多层记忆系统。"
-version: 1.10.0
+description: "四层记忆架构 (Four-tier memory architecture for OpenClaw AI agents). 提供 L0 运行时语义检索 (Ollama bge-m3 + SQLite-vec 向量库)、L1 工作记忆 (每日 Markdown 日志)、L2 长期记忆 (MEMORY.md 索引 + ARCHIVE.md 档案 + facts.db 结构化知识图谱)、Dreaming 自动化提炼管线、三方同步 (Cloud ↔ Markdown ↔ Vector)、Active Memory 主动召回、auto-memory v3 两阶段提取 (ARCHIVE.md 归档 → MEMORY.md 摘要)、cross-platform-writer 跨平台写入。适用于首次配置持久化记忆、安装 memory-core/MemOS Cloud 插件、搭建多层记忆系统。"
+version: 1.11.0
 ---
 
 # OpenClaw Memory Hub
 
-Three-tier memory architecture with automated Dreaming pipeline, three-way synchronization, Active Memory recall, and auto-extraction.
+Four-tier memory architecture with automated Dreaming pipeline, three-way synchronization, Active Memory recall, and two-stage auto-extraction.
 
 ## Overview
 
@@ -16,7 +16,9 @@ Three-tier memory architecture with automated Dreaming pipeline, three-way synch
 | **L0** | Cloud Recall | MemOS Cloud plugin (*optional*) | Cross-device memory capture and recall |
 | **L0** | Active Memory | Built-in OpenClaw plugin | Pre-reply sub-agent memory search + context injection |
 | **L1** | Working Memory | `memory/YYYY-MM-DD.md` files | Daily summaries, todos, technical notes |
-| **L2** | Long-term Memory | `MEMORY.md` (read-only base) | Key facts, user profile, permanent decisions |
+| **L2a** | Long-term Index | `MEMORY.md` (~90 lines, read-only base) | Bidirectional index → ARCHIVE.md, 0% Auto-Extracted pollution |
+| **L2b** | Detailed Archive | `ARCHIVE.md` (~220 lines) | Full records with ← MEMORY.md:XX reverse references |
+| **L2c** | Structured KB | `facts.sqlite` (entity/key/value) | Precise lookup for IPs, ports, versions; activation/decay tracking |
 
 ### Automated Pipelines
 
@@ -24,27 +26,27 @@ Three-tier memory architecture with automated Dreaming pipeline, three-way synch
 |----------|----------|-------------|
 | **Dreaming** | 03:00 UTC daily | Scan logs → DeepSeek analysis → promote to L2 |
 | **Three-way Sync** | 18:00 / 20:00 / 22:00 CST | Cloud ↔ Markdown ↔ Vector alignment |
-| **auto-memory v2** | 18:30 / 22:30 CST | Read MemOS Cloud facts → qwen3 filter + memos-extractor-0.6b → MEMORY.md |
+| **auto-memory v3** | 18:30 / 22:30 CST | Read MemOS Cloud facts → qwen3 filter → **Stage1: ARCHIVE.md (SHA-256 dedup)** → **Stage2: MEMORY.md (one-line summary)** |
 | **Workspace Cleaner** | 19:00 CST | Auto-clean working directory |
-| **REM Backfill** | 21:30 CST | Feed short-term recall pipeline (after DeepSeek) |
 | **DeepSeek Analysis** | 20:30 CST | Deep historical session analysis → DB |
-| **Wiki Compilation** | 21:00 CST (*optional*) | Extract entities → wiki vault pages |
 
-### Memory Flow
+### Memory Flow (v3: Two-Stage Pipeline)
 
 ```
 agent_end → MemOS Cloud (real-time capture + cloud LLM extraction)
               ↓
         sync-cloud-pull.py (18/20/22 CST)
               ↓
-        user_workspace/memos-cloud-cache/ (v1.10: isolated from index)
+        user_workspace/memos-cloud-cache/
               ↓
-        auto-memory.py → qwen3 filter + memos-extractor-0.6b → MEMORY.md
-                                (dual-channel: qwen3 dedup + extractor structured supplement)
+        auto-memory.py → qwen3 filter + memos-extractor-0.6b
+              ↓
+        ┌─ Stage 1: ARCHIVE.md (完整归档, SHA-256 去重)
+        └─ Stage 2: MEMORY.md (一行摘要, 不写入详细内容)
 
-before_agent_start → MemOS Cloud recall (with recall_filter: local qwen3:8b)
+before_agent_start → MemOS Cloud recall
                   + Active Memory sub-agent
-                  + memory-core (bge-m3 + BM25, v1.10: zero dirty chunks)
+                  + memory-core (bge-m3 + BM25)
               ↓
         Layered context injected before reply
 ```
