@@ -14,7 +14,7 @@
 18:30           阶段2: auto-memory v3     auto_memory_extract.py        ✅
 18:40           阶段3: sync-push+reindex  sync-cloud-push.py            ✅
                                +         openclaw memory index --force
-20:30           阶段X: Session 分析       DeepSeek Session Analysis     ✅
+20:30           阶段X: Session 分析       Session Analysis Daily     ✅
 22:00           阶段4: session-extract   session-extract.py            ✅
 22:05           阶段5: facts decay       facts_activation.py (inline)  ✅
 22:06           阶段6: healthcheck       healthcheck (inline)          ✅
@@ -240,7 +240,7 @@ UPDATE facts SET activation = activation * 0.95 WHERE permanent = 0 AND activati
 [18:05:30] 🧠 阶段2: auto-memory v3
 [18:05:35]   归档: 3 新增 / 12 重复跳过
 [18:06:00] ↑ 阶段3: sync-push + reindex
-20:30           阶段X: Session 分析       DeepSeek Session Analysis     ✅
+20:30           阶段X: Session 分析       Session Analysis Daily     ✅
 [22:00:01] 📊 阶段4: session-extract
 [22:00:05]   提取: 2 errors / 3 lessons
 [22:05:01] ⏳ 阶段5: activation decay
@@ -266,7 +266,7 @@ UPDATE facts SET activation = activation * 0.95 WHERE permanent = 0 AND activati
 **推荐配置**：使用 `daily-memory-pipeline.sh full` 作为单一 cron 任务，替代多个独立 cron，避免时序依赖问题。
 ### 阶段 X：Session 分析 — 历史会话深度分析
 
-**时间**：20:30 CST | **Job**：`DeepSeek Session Analysis Daily` | **触发**：cron agentTurn | **日志**：cron 投递队列
+**时间**：20:30 CST | **Job**：`Session Analysis Daily` | **触发**：cron agentTurn | **日志**：cron 投递队列
 
 **输入**：已索引的 sessions JSONL + `memory_search` 搜索结果
 **输出**：`memory/YYYY-MM-DD.md`（分析摘要）
