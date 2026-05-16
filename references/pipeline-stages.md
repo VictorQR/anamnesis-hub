@@ -1,7 +1,7 @@
 # Pipeline Stages — 日终管线 6 阶段详解
 
 > 每日统一管线流程：CST 18:00 → 22:00，覆盖 sync、extract、decay、healthcheck。
-> 最后更新：2026-05-17 | v1.13.0
+> 最后更新：2026-05-17 | v1.13.1
 
 ---
 
