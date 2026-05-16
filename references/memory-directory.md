@@ -274,3 +274,28 @@ L2c facts.sqlite (结构化)
     ↑ 激活/衰减
     facts_activation.py
 ```
+
+
+## 十、P3 记忆候选审核 (`.candidates/`)
+
+| 属性 | 值 |
+|------|-----|
+| **路径** | `memory/.candidates/` |
+| **脚本** | `scripts/candidates_review.py` |
+| **流程** | Dreaming 产出 → candidates.json → 待审队列 → 用户确认 → ARCHIVE.md |
+
+### 命令
+
+```bash
+python3 candidates_review.py list           # 列出待审
+python3 candidates_review.py approve --id X # 批准写入ARCHIVE.md
+python3 candidates_review.py reject --id X  # 拒绝
+python3 candidates_review.py approve-all    # 全批准
+python3 candidates_review.py stats          # 统计
+```
+
+## 十一、LCM 替代方案 (P3)
+
+OpenClaw 不支持 `memoryFlush` 配置键。LCM 通过 **AGENTS.md 规则** 实现：
+- 会话中确认的关键决策，必须在 compaction 前写入 `memory/YYYY-MM-DD.md`
+- 禁止仅在对话中给出约束而不写入文件（夏季悦失控案例）
