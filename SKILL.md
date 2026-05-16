@@ -26,23 +26,25 @@ Four-tier memory architecture with automated Dreaming pipeline, three-way synchr
 |----------|----------|-------------|
 | **Dreaming** | 03:00 UTC daily | Scan logs → DeepSeek analysis → promote to L2 |
 | **Three-way Sync** | 18:00 / 20:00 / 22:00 CST | Cloud ↔ Markdown ↔ Vector alignment |
-| **auto-memory v3** | 18:30 / 22:30 CST | Read MemOS Cloud facts → qwen3 filter → **Stage1: ARCHIVE.md (SHA-256 dedup)** → **Stage2: MEMORY.md (one-line summary)** |
-| **Workspace Cleaner** | 19:00 CST | Auto-clean working directory |
-| **DeepSeek Analysis** | 20:30 CST | Deep historical session analysis → DB |
+| **auto-memory v3** | 18:30 / 22:30 CST | MemOS Cloud facts → qwen3 filter → Stage1: ARCHIVE.md (SHA-256 dedup) → Stage2: MEMORY.md (summary) |
+| **session-extract** | 22:00 CST | Scan session JSONL → MemOS extractor/reranker → `.learnings/` + `memory/YYYY-MM-DD.md` (two-pass) |
 
-### Memory Flow (v3: Two-Stage Pipeline)
+### Memory Flow (Unified Daily Pipeline)
 
 ```
-agent_end → MemOS Cloud (real-time capture + cloud LLM extraction)
+agent_end → MemOS Cloud (cloud extraction)
               ↓
-        sync-cloud-pull.py (18/20/22 CST)
-              ↓
-        user_workspace/memos-cloud-cache/
-              ↓
-        auto-memory.py → qwen3 filter + memos-extractor-0.6b
-              ↓
-        ┌─ Stage 1: ARCHIVE.md (完整归档, SHA-256 去重)
-        └─ Stage 2: MEMORY.md (一行摘要, 不写入详细内容)
+    ┌─ 18:00 sync-pull (Cloud → local cache) ─┐
+    │  18:30 auto-memory.py                    │
+    │  → Stage 1: ARCHIVE.md (SHA-256 dedup)   │
+    │  → Stage 2: MEMORY.md (one-line summary) │
+    │                                           │
+    │  20:00 sync-push + reindex                │
+    │  22:00 session-extract.py                 │
+    │  → Pass 1: .learnings/ERRORS.md           │
+    │  → Pass 2: memory/YYYY-MM-DD.md           │
+    │  → archive analyzed → trash               │
+    └───────────────────────────────────────────┘
 
 before_agent_start → MemOS Cloud recall
                   + Active Memory sub-agent
