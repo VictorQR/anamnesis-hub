@@ -228,7 +228,29 @@ memory/
 ├── .sync-cloud-state.json  # Cloud pull cursor (last fetch timestamp)
 ├── .sync-push-state.json   # Cloud push state (SHA256 per file)
 └── DREAMS.md              # Latest Dreaming analysis output
+├── projects/
+│   ├── README.md          # Project memory index
+│   ├── clawguard.md       # Per-project memory (clawguard)
+│   ├── openclaw-memory-hub.md
+│   └── openclaw-dir-inventory.md
 ```
+
+### Project Memory (P2)
+
+Each GitHub project gets an independent `memory/projects/{slug}.md` file:
+- Isolates project-specific decisions, lessons, and conventions
+- Prevents project context from polluting MEMORY.md
+- Agent-independent: can be loaded by specific sub-agents
+- Template: project slug, GitHub URL, status, key decisions, TODOs
+
+### Alias Resolution (P2)
+
+facts.db `aliases` table maps colloquial names to canonical entities:
+- "软路由" → "iStoreOS"
+- "小爱" → "卧室小爱音箱"
+- "memory-hub" → "openclaw-memory-hub"
+
+Enables natural language queries like "软路由的IP是多少" to resolve to `SELECT * FROM facts WHERE entity='iStoreOS' AND key='ip'`.
 
 ## Automated Pipelines
 

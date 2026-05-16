@@ -161,13 +161,14 @@ def extract_from_archive() -> list:
 def seed_aliases(conn: sqlite3.Connection):
     """写入别名映射"""
     aliases = [
-        ("软路由", "iStoreOS"),
-        ("Nas", "NAS_E"),
-        ("nas", "NAS_E"),
-        ("小爱", "卧室小爱音箱"),
-        ("小爱同学", "卧室小爱音箱"),
-        ("Emby", "Emby"),
-        ("emby", "Emby"),
+        # 人物
+        ("维克多", "Victor"), ("victor", "Victor"),
+        ("软路由", "iStoreOS"), ("istoreos", "iStoreOS"), ("路由器", "iStoreOS"),
+        ("nas", "NAS_E"), ("NAS", "NAS_E"),
+        ("小爱", "卧室小爱音箱"), ("小爱同学", "卧室小爱音箱"),
+        ("emby", "Emby"), ("Emby服务器", "Emby"),
+        ("workspace", "/home/victor/.openclaw/workspace"),
+        ("memory-hub", "openclaw-memory-hub"), ("hub", "openclaw-memory-hub"),
     ]
     for alias, entity in aliases:
         try:
