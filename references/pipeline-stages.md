@@ -1,7 +1,7 @@
 # Pipeline Stages — 日终管线 6 阶段详解
 
 > 每日统一管线流程：CST 18:00 → 22:00，覆盖 sync、extract、decay、healthcheck。
-> 最后更新：2026-05-17 | v1.11.0
+> 最后更新：2026-05-17 | v1.13.0
 
 ---
 
@@ -14,6 +14,7 @@
 18:30           阶段2: auto-memory v3     auto_memory_extract.py        ✅
 18:40           阶段3: sync-push+reindex  sync-cloud-push.py            ✅
                                +         openclaw memory index --force
+20:30           阶段X: Session 分析       DeepSeek Session Analysis     ✅
 22:00           阶段4: session-extract   session-extract.py            ✅
 22:05           阶段5: facts decay       facts_activation.py (inline)  ✅
 22:06           阶段6: healthcheck       healthcheck (inline)          ✅
@@ -239,6 +240,7 @@ UPDATE facts SET activation = activation * 0.95 WHERE permanent = 0 AND activati
 [18:05:30] 🧠 阶段2: auto-memory v3
 [18:05:35]   归档: 3 新增 / 12 重复跳过
 [18:06:00] ↑ 阶段3: sync-push + reindex
+20:30           阶段X: Session 分析       DeepSeek Session Analysis     ✅
 [22:00:01] 📊 阶段4: session-extract
 [22:00:05]   提取: 2 errors / 3 lessons
 [22:05:01] ⏳ 阶段5: activation decay
@@ -262,3 +264,29 @@ UPDATE facts SET activation = activation * 0.95 WHERE permanent = 0 AND activati
 | 查看状态 | `bash daily-memory-pipeline.sh status` | 快速检查 |
 
 **推荐配置**：使用 `daily-memory-pipeline.sh full` 作为单一 cron 任务，替代多个独立 cron，避免时序依赖问题。
+### 阶段 X：Session 分析 — 历史会话深度分析
+
+**时间**：20:30 CST | **Job**：`DeepSeek Session Analysis Daily` | **触发**：cron agentTurn | **日志**：cron 投递队列
+
+**输入**：已索引的 sessions JSONL + `memory_search` 搜索结果
+**输出**：`memory/YYYY-MM-DD.md`（分析摘要）
+
+**流程**：
+1. `openclaw memory index --force` — 确保 bge-m3 索引最新
+2. `memory_search` — 搜索过去 24-48 小时内的新会话内容
+3. **OpenClaw 默认模型深度分析** — 使用 `minimax/MiniMax-M2.7`（主模型）或配置的默认回退模型，分析已索引的会话内容，提取：
+   - 关键决策和教训
+   - 偏好和习惯的变化
+   - 重要上下文更新
+4. `openclaw memory rem-backfill --path ./memory --stage-short-term` — 写入数据库
+5. 将分析摘要追加到 `memory/YYYY-MM-DD.md`
+6. 汇报摘要写入 `memory/.cron-delivery-heartbeat.json`
+
+**关键说明**：
+- 使用 OpenClaw **默认模型**（主模型 `minimax/MiniMax-M2.7`，回退 `deepseek-v4-flash`），无需额外配置 DeepSeek
+- 不是脚本管道，而是 **agentTurn payload**，完全由 agent 的工具驱动
+- 属于日间（而非日终）分析，在 session-extract 之前运行，提前捕获重要决策
+
+**状态文件**：无（纯 agent workflow）
+**失败处理**：非致命，记录 ⚠️ 到 cron 投递队列后继续
+
