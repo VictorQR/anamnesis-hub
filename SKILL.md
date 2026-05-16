@@ -1,10 +1,10 @@
 ---
-name: openclaw-memory-hub
+name: memory-hub
 description: "四层记忆架构 (Four-tier memory architecture for OpenClaw AI agents). 提供 L0 运行时语义检索 (Ollama bge-m3 + SQLite-vec 向量库)、L1 工作记忆 (每日 Markdown 日志)、L2 长期记忆 (MEMORY.md 索引 + ARCHIVE.md 档案 + facts.db 结构化知识图谱)、Dreaming 自动化提炼管线、三方同步 (Cloud ↔ Markdown ↔ Vector)、Active Memory 主动召回、auto-memory v3 两阶段提取 (ARCHIVE.md 归档 → MEMORY.md 摘要)、cross-platform-writer 跨平台写入。适用于首次配置持久化记忆、安装 memory-core/MemOS Cloud 插件、搭建多层记忆系统。"
 version: 1.11.0
 ---
 
-# OpenClaw Memory Hub
+# Memory Hub
 
 Four-tier memory architecture with automated Dreaming pipeline, three-way synchronization, Active Memory recall, and two-stage auto-extraction.
 
@@ -159,11 +159,11 @@ See `references/architecture.md` for full configuration.
     ├── scripts/
     │   └── sync-*.py              # Sync scripts (pull/push/vector)
     └── skills/
-        └── openclaw-memory-hub/   # Installed from ClawHub
+        └── memory-hub/   # Installed from ClawHub
             └── scripts/           # Pipeline scripts (auto-memory, session-extract, etc.)
 ```
 
-### 3. Pipeline Scripts (in openclaw-memory-hub/scripts/)
+### 3. Pipeline Scripts (in memory-hub/scripts/)
 
 - `auto_memory_extract.py` — v3 two-stage pipeline (ARCHIVE.md → MEMORY.md)
 - `session-extract.py` — Session JSONL scan → .learnings/ + memory/

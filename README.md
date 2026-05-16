@@ -1,7 +1,7 @@
-# 🧠 OpenClaw Memory Hub
+# 🧠 Memory Hub
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![ClawHub](https://img.shields.io/badge/ClawHub-openclaw--memory--hub-blue)](https://clawhub.ai/skills/openclaw-memory-hub)
+[![ClawHub](https://img.shields.io/badge/ClawHub-openclaw--memory--hub-blue)](https://clawhub.ai/skills/memory-hub)
 
 **Three-tier memory architecture for OpenClaw AI agents.**  
 Persistent, automated, cross-device memory that never forgets.
@@ -10,7 +10,7 @@ Persistent, automated, cross-device memory that never forgets.
 
 ## 中文简介
 
-OpenClaw Memory Hub 是一套面向 OpenClaw AI Agent 的**四层记忆架构**，解决跨会话的"AI 失忆"问题：
+Memory Hub 是一套面向 OpenClaw AI Agent 的**四层记忆架构**，解决跨会话的"AI 失忆"问题：
 
 | 层级 | 功能 | 技术栈 |
 |------|------|--------|
@@ -37,8 +37,8 @@ OpenClaw Memory Hub 是一套面向 OpenClaw AI Agent 的**四层记忆架构**�
 
 ```bash
 # Clone and run
-git clone https://github.com/VictorQR/openclaw-memory-hub.git
-cd openclaw-memory-hub
+git clone https://github.com/VictorQR/memory-hub.git
+cd memory-hub
 bash scripts/auto-setup.sh
 ```
 
@@ -94,7 +94,7 @@ bash scripts/auto-setup.sh --skip-memos
 ## Installation via ClawHub
 
 ```bash
-openclaw skills install openclaw-memory-hub
+openclaw skills install memory-hub
 ```
 
 This loads the SKILL.md into your agent's context so it knows how to set up and maintain the memory system.
@@ -112,9 +112,9 @@ This loads the SKILL.md into your agent's context so it knows how to set up and 
 ## Skill Structure
 
 ```
-openclaw-memory-hub/
+memory-hub/
 ├── SKILL.md                          # Main skill entry (loaded into agent context)
-├── openclaw-memory-hub.skill         # Packaged .skill distribution file
+├── memory-hub.skill         # Packaged .skill distribution file
 ├── scripts/
 │   └── auto-setup.sh                 # One-command interactive setup script
 ├── references/
