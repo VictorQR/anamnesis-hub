@@ -34,13 +34,7 @@ MEMORY_DIR = WORKSPACE / "memory"
 CACHE_DIR = WORKSPACE / "user_workspace" / "memos-cloud-cache"
 MEMORY_MD = WORKSPACE / "MEMORY.md"
 ARCHIVE_MD = WORKSPACE / "ARCHIVE.md"
-WRITER_SCRIPT = (
-    WORKSPACE
-    / "skills"
-    / "cross-platform-writer"
-    / "scripts"
-    / "write_file.py"
-)
+WRITER_SCRIPT = Path(__file__).resolve().parent / "write_file.py"
 
 # qwen3 本地调用
 OLLAMA_BASE = "http://127.0.0.1:11434"

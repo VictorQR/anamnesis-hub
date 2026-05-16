@@ -53,28 +53,17 @@ before_agent_start → MemOS Cloud recall
         Layered context injected before reply
 ```
 
-## Bundled Skills
+## Scripts
 
-This package includes two auxiliary skills:
-
-### 1. cross-platform-writer
-
-**Path**: `skills/cross-platform-writer/`
-**Script**: `skills/cross-platform-writer/scripts/write_file.py`
-
-Replaces OpenClaw's built-in `write` tool for text file creation. Auto-detects encoding (utf-8/utf-8-sig/gbk), handles BOM, and adapts line endings (CRLF/LF) per platform.
-
-When writing text files: write to temp → run `write_file.py` → cleanup.
-
-### 2. auto-memory
-
-**Path**: `skills/auto-memory/`
-**Script**: `scripts/auto_memory_extract.py`
-
-Reads the latest MemOS Cloud synced facts (`memos-cloud-YYYY-MM-DD.md`), filters noise (system crons, duplicates), and uses local qwen3:8b to extract structured long-term memories into `MEMORY.md`.
-
-Manual trigger: "提取记忆" / "同步记忆" / "整理记忆"
-Cron: 18:30 / 22:30 CST (`30 18,22 * * *`)
+| Script | Purpose |
+|--------|--------|
+| `auto_memory_extract.py` | v3 two-stage pipeline: ARCHIVE.md archive → MEMORY.md summary |
+| `session-extract.py` | Scan session JSONL → .learnings/ + memory/ (two-pass) |
+| `seed-facts-db.py` | Initialize facts.sqlite from ARCHIVE.md |
+| `facts_activation.py` | Hebbian activation + daily decay + Hot/Warm/Cool |
+| `daily-memory-pipeline.sh` | 6-stage unified daily pipeline |
+| `write_file.py` | Cross-platform text writer (UTF-8/BOM/CRLF) |
+| `auto-setup.sh` | One-command Ollama + memory-core + MemOS Cloud setup |
 
 ## Setup
 
@@ -161,27 +150,28 @@ See `references/architecture.md` for full configuration.
 │   ├── YYYY-MM-DD.md          # Daily working memory (auto-indexed)
 │   ├── MEMORY_INDEX.md        # Vector BM25 cluster summaries
 │   └── .sync-*.json           # Sync state files
-├── MEMORY.md                  # Long-term memory base
+├── MEMORY.md                  # Long-term memory index (~90 lines)
+├── ARCHIVE.md                 # Detailed archive (~220 lines, ← bidirectional refs)
 ├── AGENTS.md                  # Runtime context + memory rules
 └── user_workspace/
-    ├── memos-cloud-cache/         # v1.10: Cloud-pulled memory (isolated from index)
-    │   └── memos-cloud-*.md       #     Auto-clean >7 days
+    ├── memos-cloud-cache/         # Cloud-pulled memory (isolated from index)
+    │   └── memos-cloud-*.md
     ├── scripts/
-    │   ├── auto_memory_extract.py  # auto-memory v2 (dual-channel)
-    │   └── sync-*.py               # Sync scripts
+    │   └── sync-*.py              # Sync scripts (pull/push/vector)
     └── skills/
-        ├── cross-platform-writer/  # Encoding-safe file writer
-        └── auto-memory/            # Auto extraction skill
+        └── openclaw-memory-hub/   # Installed from ClawHub
+            └── scripts/           # Pipeline scripts (auto-memory, session-extract, etc.)
 ```
 
-### 3. Sync Scripts
+### 3. Pipeline Scripts (in openclaw-memory-hub/scripts/)
 
-Located at `user_workspace/scripts/`:
-- `sync-cloud-pull.py` — Pull from MemOS Cloud → memos-cloud-cache/ (v1.10: isolated from memory/)
-- `sync-cloud-push.py` — Push local markdown changes → Cloud (SHA256 diff)
-- `sync-vector-index.py` — Vector DB → MEMORY_INDEX.md (FTS5 BM25 clustering)
-- `sync-all.sh` — Orchestrator: pull → push → vector-index → cache cleanup (>7d) → reindex
-- `auto_memory_extract.py` — auto-memory v2 extraction (dual-channel: qwen3 + memos-extractor)
+- `auto_memory_extract.py` — v3 two-stage pipeline (ARCHIVE.md → MEMORY.md)
+- `session-extract.py` — Session JSONL scan → .learnings/ + memory/
+- `seed-facts-db.py` — Initialize facts.sqlite from ARCHIVE.md
+- `facts_activation.py` — Hebbian activation + daily decay
+- `daily-memory-pipeline.sh` — 6-stage unified daily pipeline
+- `write_file.py` — Cross-platform text file writer
+- `auto-setup.sh` — One-command Ollama + memory-core + MemOS Cloud setup
 
 See `references/sync-api.md` for MemOS Cloud API details.
 
@@ -192,5 +182,5 @@ See `references/sync-api.md` for MemOS Cloud API details.
 - `references/sync-api.md` — MemOS Cloud API reference
 - `scripts/auto-setup.sh` — One-command interactive setup
 - `scripts/auto_memory_extract.py` — auto-memory v2 script
-- `skills/cross-platform-writer/` — Cross-platform text file writer skill
-- `skills/auto-memory/` — Auto memory extraction skill
+- `scripts/write_file.py` — Cross-platform text file writer
+- `scripts/auto_memory_extract.py` — v3 two-stage memory extraction
