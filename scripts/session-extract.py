@@ -211,7 +211,7 @@ def get_all_sessions(days: int = None, pass_num: int = 1) -> list:
         else:
             name = jf.stem
 
-        skip_patterns = ["deleted", "trajectory"]
+        skip_patterns = ["deleted", "trajectory", "trajectory-path"]  # 明确跳过 trajectory-path.json
         if pass_num == 1:
             skip_patterns.extend(["analyzed1", "analyzed2"])
         if any(p in full_stem for p in skip_patterns):
@@ -270,7 +270,7 @@ def get_all_sessions(days: int = None, pass_num: int = 1) -> list:
     if sessions:
         latest_id = sessions[0]["sessionId"]
         print(f"[skip] 最新会话跳过: {latest_id}")
-        sessions = sessions[1:]
+        sessions = sessions[2:]  # 跳过前2条：main(最新) + qqbot(次新)
 
     return sessions
 

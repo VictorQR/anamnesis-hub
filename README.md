@@ -1,7 +1,7 @@
-# 🧠 Victor Memory Hub
+# 🧠 anamnesis-hub
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![ClawHub](https://img.shields.io/badge/ClawHub-openclaw--memory--hub-blue)](https://clawhub.ai/skills/anamnesis-hub)
+[![ClawHub](https://img.shields.io/badge/ClawHub-anamnesis--hub-blue)](https://clawhub.ai/victorqr/anamnesis-hub)
 
 **Three-tier memory architecture for OpenClaw AI agents.**  
 Persistent, automated, cross-device memory that never forgets.
@@ -10,7 +10,7 @@ Persistent, automated, cross-device memory that never forgets.
 
 ## 中文简介
 
-Victor Memory Hub 是一套面向 OpenClaw AI Agent 的**四层记忆架构**，解决跨会话的"AI 失忆"问题：
+**anamnesis-hub** 是一套面向 OpenClaw AI Agent 的**四层记忆架构**，解决跨会话的"AI 失忆"问题：
 
 | 层级 | 功能 | 技术栈 |
 |------|------|--------|
@@ -94,7 +94,7 @@ bash scripts/auto-setup.sh --skip-memos
 ## Installation via ClawHub
 
 ```bash
-openclaw skills install anamnesis-hub
+openclaw skills install victorqr/anamnesis-hub
 ```
 
 This loads the SKILL.md into your agent's context so it knows how to set up and maintain the memory system.
@@ -114,15 +114,23 @@ This loads the SKILL.md into your agent's context so it knows how to set up and 
 ```
 anamnesis-hub/
 ├── SKILL.md                          # Main skill entry (loaded into agent context)
-├── anamnesis-hub.skill         # Packaged .skill distribution file
+├── anamnesis-hub.skill                # Packaged .skill distribution file
 ├── scripts/
-│   └── auto-setup.sh                 # One-command interactive setup script
+│   └── auto-setup.sh                  # One-command interactive setup script
 ├── references/
-│   ├── architecture.md               # Full architecture documentation
-│   ├── setup-guide.md                # Step-by-step manual guide
-│   └── sync-api.md                   # MemOS Cloud API reference
+│   ├── INDEX.md                      # 📌 文档入口索引
+│   ├── architecture.md                # 四层架构设计、插件配置、协同流程
+│   ├── setup-guide.md                 # 环境配置、手动安装步骤、cron 设置
+│   ├── memory-directory.md           # memory/ 目录结构、状态文件、LCM 机制
+│   ├── sync-api.md                   # MemOS Cloud API 参考
+│   ├── scripts-reference.md         # 所有脚本统一说明（用途、cron、依赖）
+│   ├── pipeline-stages.md            # 日终管线 6 阶段详解
+│   ├── candidates-review.md          # P3 记忆候选审核机制
+│   └── upgrade-reset.md              # 升级路径、重置流程、卸载步骤
 └── README.md                         # This file
 ```
+
+👉 **完整文档请查阅 `references/INDEX.md`**
 
 ---
 

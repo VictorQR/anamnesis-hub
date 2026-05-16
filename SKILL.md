@@ -4,7 +4,7 @@ description: "四层记忆架构 (Four-tier memory architecture for OpenClaw AI 
 version: 1.11.0
 ---
 
-# Victor Memory Hub
+# anamnesis-hub
 
 Four-tier memory architecture with automated Dreaming pipeline, three-way synchronization, Active Memory recall, and two-stage auto-extraction.
 
@@ -173,14 +173,20 @@ See `references/architecture.md` for full configuration.
 - `write_file.py` — Cross-platform text file writer
 - `auto-setup.sh` — One-command Ollama + memory-core + MemOS Cloud setup
 
-See `references/sync-api.md` for MemOS Cloud API details.
+See `references/INDEX.md` for full documentation index.
 
 ## File Reference
 
-- `references/architecture.md` — Detailed architecture documentation
-- `references/setup-guide.md` — Complete manual setup guide with templates
-- `references/sync-api.md` — MemOS Cloud API reference
-- `scripts/auto-setup.sh` — One-command interactive setup
-- `scripts/auto_memory_extract.py` — auto-memory v2 script
-- `scripts/write_file.py` — Cross-platform text file writer
-- `scripts/auto_memory_extract.py` — v3 two-stage memory extraction
+👉 **完整文档请查阅 `references/INDEX.md`**
+
+| 文档 | 说明 |
+|------|------|
+| `references/INDEX.md` | 📌 文档入口索引（快速定位） |
+| `references/architecture.md` | 四层架构设计、插件配置、协同流程 |
+| `references/setup-guide.md` | 环境配置、手动安装步骤、cron 设置 |
+| `references/memory-directory.md` | memory/ 目录结构、状态文件、LCM 机制 |
+| `references/sync-api.md` | MemOS Cloud API 参考 |
+| `references/scripts-reference.md` | 所有脚本统一说明（用途、cron、依赖） |
+| `references/pipeline-stages.md` | 日终管线 6 阶段详解 |
+| `references/candidates-review.md` | P3 记忆候选审核机制 |
+| `references/upgrade-reset.md` | 升级路径、重置流程、卸载步骤 |
