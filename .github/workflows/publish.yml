@@ -40,6 +40,7 @@ jobs:
 
       - name: Publish to ClawHub
         env:
+          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
           VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
         run: |
           VERSION_NUM=${VERSION#v}
