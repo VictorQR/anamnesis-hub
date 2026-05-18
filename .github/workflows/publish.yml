@@ -40,7 +40,6 @@ jobs:
 
       - name: Publish to ClawHub
         env:
-          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
           VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
         run: |
           VERSION_NUM=${VERSION#v}
@@ -49,4 +48,5 @@ jobs:
             --slug anamnesis-hub \
             --owner victorqr \
             --version "$VERSION_NUM" \
-            --changelog "Release $VERSION_NUM"
+            --changelog "Release $VERSION_NUM" \
+            --token "$CLAWHUB_TOKEN"
