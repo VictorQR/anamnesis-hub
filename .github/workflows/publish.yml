@@ -44,7 +44,6 @@ jobs:
           VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
         run: |
           VERSION_NUM=${VERSION#v}
-          echo "Publishing version: $VERSION_NUM"
           clawhub login --token "$CLAWHUB_TOKEN" --no-browser
           clawhub publish . \
             --slug anamnesis-hub \
