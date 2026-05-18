@@ -10,7 +10,7 @@ Persistent, automated, cross-device memory that never forgets.
 
 ## 中文简介
 
-**anamnesis-hub** 是一套面向 OpenClaw AI Agent 的**四层记忆架构**，解决跨会话的"AI 失忆"问题：
+**anamnesis-hub** 是一套面向 OpenClaw AI Agent 的**四层记忆架构**，解决跨会话的"AI 失忆"问题，v1.13 起支持自动记忆审核（P3 候选机制）和 Dreaming 自动化提炼管线。
 
 | 层级 | 功能 | 技术栈 |
 |------|------|--------|
@@ -22,7 +22,15 @@ Persistent, automated, cross-device memory that never forgets.
 | **L2b** 档案层 | 详细记录含反向引用 ← MEMORY.md:XX | `ARCHIVE.md`（~220行，历史垃圾已清理） |
 | **L2c** 知识图谱 | 结构化 entity/key/value，精确查找 + 热度追踪 | `facts.sqlite` |
 
-**自动化管线**：Dreaming（每日 UTC 03:00）→ 三方同步（18:00/20:00/22:00）→ auto-memory v3（两阶段管道：ARCHIVE.md 归档 → MEMORY.md 摘要）→ session-extract（扫描会话JSONL → MemOS提取 → .learnings/ + memory/）。
+**自动化管线（v1.13.2）**：Dreaming（每日 UTC 03:00）→ 三方同步（18:00/20:00/22:00）→ auto-memory v3（两阶段管道：ARCHIVE.md 归档 → MEMORY.md 摘要）→ session-extract（扫描会话JSONL → MemOS提取 → .learnings/ + memory/）。
+
+### v1.13.2 Bug Fix Release
+- ✅ 修复 `auto_memory_extract.py` 缺少 `import os` 导致运行时崩溃
+- ✅ 修复 `daily-memory-pipeline.sh` `set -e` 下 `result=$(...)` 提前终止脚本
+- ✅ 修复 `session-extract.py` pass=2 跳过历史文件的逻辑错误
+- ✅ 修复 `facts_activation.py` GC 只预览不删除的问题（新增 `--force` 参数）
+- ✅ 修复 `write_file.py` 非原子写入（新增 tempfile+rename 原子写入）
+- ✅ 修复 `candidates_review.py` 状态文件非原子写入和 `approve_all()` 循环数据不一致问题
 
 ### 附赠技能
 - **cross-platform-writer** — 跨平台文本写入，自动处理编码/BOM/CRLF
