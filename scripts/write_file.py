@@ -470,37 +470,86 @@ def main() -> int:
         except Exception:
             pass
 
-    # ── 写入文件 ──────────────────────────────────────────────────────────────
-    open_mode = "a" if args.append else "w"
-    try:
-        # newline="" 让 Python 不再做额外换行转换（我们已手动处理）
-        with open(target_path, open_mode, encoding=encoding, newline="") as f:
-            f.write(final_content)
-    except UnicodeEncodeError as e:
-        # 编码无法表示某些字符（如用 GBK 写 emoji）
-        problem_char = e.object[e.start:e.end] if e.start < len(e.object) else "?"
+    # ── 原子写入（非 append 模式：临时文件 → fsync → rename） ─────────────────
+    import os, tempfile
+    if args.append:
+        # 追加模式：直接写入，保持原有错误处理结构
         try:
-            code_point = f"U+{ord(problem_char):04X}"
-        except (TypeError, ValueError):
-            code_point = "unknown"
-        _error(
-            f"编码错误: 字符 '{problem_char}' ({code_point}) 无法用 {encoding} 编码表示。"
-            f"建议使用 --encoding utf-8 或 --encoding utf-8-sig"
-        )
-        return 2
-    except PermissionError:
-        _error(f"写入失败: 权限拒绝 '{target_path}'")
-        return 2
-    except OSError as e:
-        # errno 28 = ENOSPC (磁盘空间不足)
-        if hasattr(e, 'errno') and e.errno == 28:
-            _error(f"写入失败: 磁盘空间不足")
-        else:
+            with open(target_path, "a", encoding=encoding, newline="") as f:
+                f.write(final_content)
+        except UnicodeEncodeError as e:
+            problem_char = e.object[e.start:e.end] if e.start < len(e.object) else "?"
+            try:
+                code_point = f"U+{ord(problem_char):04X}"
+            except (TypeError, ValueError):
+                code_point = "unknown"
+            _error(
+                f"编码错误: 字符 '{problem_char}' ({code_point}) 无法用 {encoding} 编码表示。"
+                f"建议使用 --encoding utf-8 或 --encoding utf-8-sig"
+            )
+            return 2
+        except PermissionError:
+            _error(f"写入失败: 权限拒绝 '{target_path}'")
+            return 2
+        except OSError as e:
+            if hasattr(e, 'errno') and e.errno == 28:
+                _error(f"写入失败: 磁盘空间不足")
+            else:
+                _error(f"写入失败: {e}")
+            return 2
+        except Exception as e:
             _error(f"写入失败: {e}")
-        return 2
-    except Exception as e:
-        _error(f"写入失败: {e}")
-        return 2
+            return 2
+    else:
+        # 原子写入模式：临时文件 → 写入 → fsync → rename 原子替换
+        tmp_fd, tmp_path = None, None
+        try:
+            tmp_fd, tmp_path = tempfile.mkstemp(
+                dir=str(target_path.parent),
+                prefix=".write_tmp_",
+                suffix=""
+            )
+            with os.fdopen(tmp_fd, "w", encoding=encoding, newline="") as f:
+                tmp_fd = None  # fd 已移交 fdopen，标记避免重复 close
+                f.write(final_content)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_path, target_path)
+            tmp_path = None  # rename 成功后不再清理
+        except UnicodeEncodeError as e:
+            problem_char = e.object[e.start:e.end] if e.start < len(e.object) else "?"
+            try:
+                code_point = f"U+{ord(problem_char):04X}"
+            except (TypeError, ValueError):
+                code_point = "unknown"
+            _error(
+                f"编码错误: 字符 '{problem_char}' ({code_point}) 无法用 {encoding} 编码表示。"
+                f"建议使用 --encoding utf-8 或 --encoding utf-8-sig"
+            )
+            return 2
+        except PermissionError:
+            _error(f"写入失败: 权限拒绝 '{target_path}'")
+            return 2
+        except OSError as e:
+            if hasattr(e, 'errno') and e.errno == 28:
+                _error(f"写入失败: 磁盘空间不足")
+            else:
+                _error(f"写入失败: {e}")
+            return 2
+        except Exception as e:
+            _error(f"写入失败: {e}")
+            return 2
+        finally:
+            if tmp_fd is not None:
+                try:
+                    os.close(tmp_fd)
+                except Exception:
+                    pass
+            if tmp_path is not None:
+                try:
+                    os.unlink(tmp_path)
+                except Exception:
+                    pass
 
     # ── 计算实际字节数 ────────────────────────────────────────────────────────
     try:

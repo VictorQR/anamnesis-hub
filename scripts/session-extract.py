@@ -266,8 +266,8 @@ def get_all_sessions(days: int = None, pass_num: int = 1) -> list:
 
     sessions.sort(key=lambda x: x["updatedAt"], reverse=True)
 
-    # 跳过最新会话（updatedAt 最高者），防止正在运行的会话被重命名
-    if sessions:
+    # pass=2 处理历史 analyzed1 文件，不应跳过最新会话
+    if pass_num == 1 and sessions:
         latest_id = sessions[0]["sessionId"]
         print(f"[skip] 最新会话跳过: {latest_id}")
         sessions = sessions[2:]  # 跳过前2条：main(最新) + qqbot(次新)

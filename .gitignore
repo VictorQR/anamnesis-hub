@@ -1,1 +1,3 @@
 # Ignore packaged .skill file (already included in release)
+*.pyc
+__pycache__/

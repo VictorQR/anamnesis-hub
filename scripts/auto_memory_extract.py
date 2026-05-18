@@ -24,6 +24,7 @@ import hashlib
 import re
 import sys
 import urllib.request
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 

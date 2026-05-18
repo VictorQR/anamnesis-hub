@@ -39,7 +39,7 @@ pull_cloud() {
 run_auto_memory() {
     log "🧠 阶段2: auto-memory v3 (ARCHIVE.md archive → MEMORY.md summary)"
     if [ -f "${SCRIPTS_DIR}/auto_memory_extract.py" ]; then
-        result=$(python3 "${SCRIPTS_DIR}/auto_memory_extract.py" --mode full 2>&1)
+        result=$(python3 "${SCRIPTS_DIR}/auto_memory_extract.py" --mode full 2>&1 || true)
         echo "$result" >> "$LOG_FILE"
         
         # 解析结果
@@ -66,7 +66,7 @@ push_cloud() {
 run_session_extract() {
     log "📊 阶段4: session-extract (JSONL scan → .learnings/ + memory/)"
     if [ -f "${SCRIPTS_DIR}/session-extract.py" ]; then
-        result=$(python3 "${SCRIPTS_DIR}/session-extract.py" --full 2>&1)
+        result=$(python3 "${SCRIPTS_DIR}/session-extract.py" --full 2>&1 || true)
         echo "$result" >> "$LOG_FILE"
         errors=$(echo "$result" | grep -c "ERROR\|Error" 2>/dev/null || echo "0")
         lessons=$(echo "$result" | grep -c "LESSON\|Lesson" 2>/dev/null || echo "0")
