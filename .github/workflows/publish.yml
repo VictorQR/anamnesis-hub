@@ -24,9 +24,7 @@ jobs:
           node-version: '24'
 
       - name: Install ClawHub CLI
-        run: |
-          npm install -g clawhub@latest
-          clawhub --version
+        run: npm install -g clawhub@latest
 
       - name: Build .skill package
         run: |
