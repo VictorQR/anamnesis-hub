@@ -45,7 +45,7 @@ jobs:
         run: |
           VERSION_NUM=${VERSION#v}
           echo "Publishing version: $VERSION_NUM"
-          echo "Token length: ${#CLAWHUB_TOKEN}"
+          clawhub login --token "$CLAWHUB_TOKEN" --no-browser
           clawhub publish . \
             --slug anamnesis-hub \
             --owner victorqr \
