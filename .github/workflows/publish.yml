@@ -24,7 +24,9 @@ jobs:
           node-version: '24'
 
       - name: Install ClawHub CLI
-        run: npm install -g clawhub
+        run: |
+          npm install -g clawhub@latest
+          clawhub --version
 
       - name: Build .skill package
         run: |
@@ -40,13 +42,14 @@ jobs:
 
       - name: Publish to ClawHub
         env:
+          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
           VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
         run: |
           VERSION_NUM=${VERSION#v}
           echo "Publishing version: $VERSION_NUM"
+          echo "Token length: ${#CLAWHUB_TOKEN}"
           clawhub publish . \
             --slug anamnesis-hub \
             --owner victorqr \
             --version "$VERSION_NUM" \
-            --changelog "Release $VERSION_NUM" \
-            --token "$CLAWHUB_TOKEN"
+            --changelog "Release $VERSION_NUM"
