@@ -20,12 +20,27 @@ jobs:
       - name: Install ClawHub CLI
         run: npm install -g clawhub
 
+      - name: Build .skill package
+        run: |
+          # Remove old .skill file if exists
+          rm -f anamnesis-hub.skill
+          # Build new .skill (zip everything except .git and .skill itself)
+          zip -r anamnesis-hub.skill . \
+            -x ".git/*" \
+            -x "anamnesis-hub.skill" \
+            -x "__pycache__/*" \
+            -x "*/__pycache__/*"
+          echo "Built: $(ls -lh anamnesis-hub.skill)"
+
       - name: Publish to ClawHub
         env:
-          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
+          # Strip 'v' prefix: refs/tags/v1.13.2 → 1.13.2
+          VERSION: ${{ github.ref_name }}
         run: |
+          VERSION_NUM=${VERSION#v}
+          echo "Publishing version: $VERSION_NUM"
           clawhub publish . \
             --slug anamnesis-hub \
             --owner victorqr \
-            --version ${GITHUB_REF#refs/tags/} \
-            --changelog "Release ${GITHUB_REF#refs/tags/}"
+            --version "$VERSION_NUM" \
+            --changelog "Release $VERSION_NUM"
